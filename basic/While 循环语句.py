@@ -15,3 +15,15 @@ while len(numbers) > 0:
 
 print(even)
 print(odd)
+
+
+
+###循环使用 else 语句##################
+count =0
+while (count <5):
+    print(count," is less than 5")
+    count =count+1
+else:
+    print(count," is not less than 5")
+
+
