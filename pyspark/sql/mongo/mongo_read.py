@@ -1,10 +1,11 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 __author__ = 'wsc'
 
 import os
 import sys
 
+print(sys.getdefaultencoding())
 # Path
 os.environ['SPARK_HOME'] = "H:\workspaces\spark"
 
@@ -31,6 +32,13 @@ try:
 
     df = my_spark.read.format("com.mongodb.spark.sql.DefaultSource").load()
     df.printSchema()
+
+    df.registerTempTable("question")
+
+    question = my_spark.sql("""
+        select _id,points from question
+    """)
+    question.show()
 
 except ImportError as e:
     print("Can not import Spark Modules", e)
