@@ -4,6 +4,15 @@ __author__ = 'wsc'
 
 import os
 import sys
+import mh
+import jpype
+import numpy
+from jpype import *
+
+jvmPath = jpype.getDefaultJVMPath()
+
+startJVM(jvmPath, "-ea", """-Djava.class.path=‪C:\\Users\\wsc\\.m2\\repository\\org\\apache\\spark\\spark-core_2.11\\2.3.2\\spark-core_2.11-2.3.2.jar;‪C:\\Users\\wsc\\.m2\\repository\\org\\apache\\spark\\spark-sql_2.11\\2.3.2\\spark-sql_2.11-2.3.2.jar"
+                         """)
 
 print(sys.getdefaultencoding())
 # Path
@@ -22,6 +31,7 @@ database = "huatu_ztk."
 collection = "ztk_question_new"
 
 try:
+
     from pyspark.sql import SparkSession
 
     my_spark = SparkSession \
@@ -35,10 +45,14 @@ try:
 
     df.registerTempTable("question")
 
-    question = my_spark.sql("""
+    df = my_spark.sql("""
         select _id,points from question
-    """)
-    question.show()
+    """).rdd.filter(mh.myfile).mapPartitions(mh.mypartiton)
+
+    # question = my_spark.createDataFrame(df)
+    # question.show
+    for i in df.take(100):
+        print(i)
 
 except ImportError as e:
     print("Can not import Spark Modules", e)
