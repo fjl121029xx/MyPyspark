@@ -17,6 +17,11 @@ def mypartiton(arr):
 
 
 def myfile(r):
-    if r.isNull & r.points.isEmpty:
+    print(r)
+    if r.points :
+        if len(r.points) != 3:
+            return False
+    else:
         return False
-    len(r.points) == 3
+
+    return True
