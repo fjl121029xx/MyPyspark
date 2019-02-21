@@ -54,7 +54,6 @@ try:
     pq.registerTempTable("abc")
     my_spark.sql("select pid,summation(qid) from abc group by pid order by pid").show()
 
-
     # question = my_spark.createDataFrame(df)
     # question.show
     # for i in df.take(100):
