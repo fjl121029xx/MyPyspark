@@ -3,18 +3,20 @@
 __author__ = 'wsc'
 
 import os
-import sys
 import mh
 import jpype
-import numpy
 from jpype import *
 
 jvmPath = jpype.getDefaultJVMPath()
 
-startJVM(jvmPath, "-ea", """-Djava.class.path=‪C:\\Users\\wsc\\.m2\\repository\\org\\apache\\spark\\spark-core_2.11\\2.3.2\\spark-core_2.11-2.3.2.jar;‪C:\\Users\\wsc\\.m2\\repository\\org\\apache\\spark\\spark-sql_2.11\\2.3.2\\spark-sql_2.11-2.3.2.jar"
-                         """)
-
-print(sys.getdefaultencoding())
+# jars_dir = 'H:/pp/'
+# jars = [os.path.join(jars_dir, 'myspark.jar'), os.path.join(jars_dir, 'spark-core_2.11-2.3.2.jar'),
+#         os.path.join(jars_dir, 'spark-sql_2.11-2.3.2.jar')]
+# jvm_cp = "-Djava.class.path={}".format(':'.join(jars))
+# dependency = "-Djava.ext.dirs={}".format(':'.join(jars))
+jvm_cp = "-Djava.class.path=H:/pp/pjava-1.0-SNAPSHOT-jar-with-dependencies.jar"
+print(jvm_cp)
+startJVM(jvmPath, "-ea", jvm_cp)
 # Path
 os.environ['SPARK_HOME'] = "H:\workspaces\spark"
 
@@ -33,26 +35,30 @@ collection = "ztk_question_new"
 try:
 
     from pyspark.sql import SparkSession
+    from pyspark.sql import Row
 
     my_spark = SparkSession \
         .builder \
         .appName("mongo read") \
         .config("spark.mongodb.input.uri", uri + database + collection) \
         .getOrCreate()
+    my_spark.udf.registerJavaUDAF("summation", 'com.Test')
 
     df = my_spark.read.format("com.mongodb.spark.sql.DefaultSource").load()
-    df.printSchema()
-
     df.registerTempTable("question")
 
-    df = my_spark.sql("""
+    pq = my_spark.sql("""
         select _id,points from question
-    """).rdd.filter(mh.myfile).mapPartitions(mh.mypartiton)
+    """).rdd.filter(mh.myfile).mapPartitions(mh.mypartiton).toDF()
+
+    pq.registerTempTable("abc")
+    my_spark.sql("select pid,summation(qid) from abc group by pid").show()
+
 
     # question = my_spark.createDataFrame(df)
     # question.show
-    for i in df.take(100):
-        print(i)
+    # for i in df.take(100):
+    #     print(i)
 
 except ImportError as e:
     print("Can not import Spark Modules", e)
