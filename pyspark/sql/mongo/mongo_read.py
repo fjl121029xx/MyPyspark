@@ -52,7 +52,7 @@ try:
     """).rdd.filter(mh.myfile).mapPartitions(mh.mypartiton).toDF()
 
     pq.registerTempTable("abc")
-    my_spark.sql("select pid,summation(qid) from abc group by pid").show()
+    my_spark.sql("select pid,summation(qid) from abc group by pid order by pid").show()
 
 
     # question = my_spark.createDataFrame(df)
