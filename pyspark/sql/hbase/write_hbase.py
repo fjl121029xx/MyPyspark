@@ -41,24 +41,31 @@ try:
 
         sc = my_spark.sparkContext
 
-        host = '192.168.100.68:2181,192.168.100.70:2181,192.168.100.72:2181'
+        host = '192.168.100.68,192.168.100.70,192.168.100.72'
         table = 'student'
 
         # keyConv = "org.apache.spark.examples.pythonconverters.StringToImmutableBytesWritableConverter"
         # valueConv = "org.apache.spark.examples.pythonconverters.StringListToPutConverter"
 
-        keyConv = "org.apache.spark.api.python.JavaToWritableConverter"
-        valueConv = "org.apache.spark.api.python.JavaToWritableConverter"
+        keyConv = "org.apache.spark.examples.pythonconverters.StringToImmutableBytesWritableConverter"
+        valueConv = "com.python.converter.StringConverter"
 
         conf = {"hbase.zookeeper.quorum": host, "hbase.mapred.outputtable": table,
                 "hbase.zookeeper.property.clientPort": "2181",
+                "hbase.rootdir": "hdfs://192.168.100.70:8020/hbase",
+                "spark.hadoop.validateOutputSpecs": "false",
                 "mapreduce.outputformat.class": "org.apache.hadoop.hbase.mapreduce.TableOutputFormat",
                 "mapreduce.job.output.key.class": "org.apache.hadoop.hbase.io.ImmutableBytesWritable",
                 "mapreduce.job.output.value.class": "org.apache.hadoop.io.Writable"}
 
-        rawData = ['3-info-name-Rongcheng', '4-info-name-Guanhua']
+        rawData = ['3,info,name,Rongcheng', '4,info,name,Guanhua']
         # (rowkey, [row key, column family, column name, value])
-        sc.parallelize(rawData).map(lambda x: (x[0], x.split('-'))).saveAsNewAPIHadoopDataset(conf, keyConv, valueConv)
+        rdd = sc.parallelize(rawData).map(lambda x: (x[0], x))
+        rdd.foreach(print)
+
+        rdd.saveAsNewAPIHadoopDataset(conf,
+                                      keyConv,
+                                      valueConv)
 
 except ImportError as e:
     print("Can not import Spark Modules", e)
