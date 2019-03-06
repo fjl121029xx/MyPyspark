@@ -6,11 +6,11 @@ import os
 import sys
 
 # Path
-os.environ['SPARK_HOME'] = "H:\workspaces\spark"
+os.environ['SPARK_HOME'] = "D:\work\spark"
 
 # Apperd pyspark to Python Path
-sys.path.append("H:\workspaces\spark\python")
-sys.path.append("H:\workspaces\spark\python\lib\py4j-0.10.7-src.zip")
+sys.path.append("D:\work\spark\python")
+sys.path.append("D:\work\spark\python\lib\py4j-0.10.7-src.zip")
 
 try:
     from pyspark import SparkContext
