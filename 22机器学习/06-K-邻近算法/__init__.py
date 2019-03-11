@@ -6,6 +6,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
 
 """
     knn 用户签到位置
@@ -26,7 +27,7 @@ def knncls():
     data = data.query("x > 1.0 & x < 1.25 & y > 2.5 & y < 2.75")
     # 处理时间
     time_value = pd.to_datetime(data['time'], unit='s')
-    # print(time_val)
+    print(time_value)
     # 把日期格式转成字典数据
     time_value = pd.DatetimeIndex[time_value]
     # 构造一些特征
@@ -52,11 +53,20 @@ def knncls():
     std_x_train = std.transform(x_train)
     std_y_train = std.transform(y_train)
     # 算法
-    knn = KNeighborsClassifier(n_neighbors=5)
+    # knn = KNeighborsClassifier(n_neighbors=5)
+    knn = KNeighborsClassifier()
+
+    # 网格搜索 优化超参数
+    gc = GridSearchCV(knn, param_grid={"n_neighbors": [3, 5, 7, 9]}, cv=10)
+    gc.fit(x_train, y_train)
+    knn.fit(std_x_train, std_y_train)
+    print("gc在测试集上的准确率：", gc.score(x_test, y_test))
+    print("gc在交叉验证当中最好的结果：", gc.score(x_test, y_test))
+    print("gc选择最好的模型是：", gc.score(x_test, y_test))
+    print("gc每个超参数每次交叉验证的结果：", gc.score(x_test, y_test))
+
     # knn.fit(x_train, y_train)
     # 标准化之后
-    knn.fit(std_x_train, std_y_train)
-
     # 得出预测结果
     y_predict = knn.predict(x_test)
     print("预测的目标签到位置：", y_predict)
