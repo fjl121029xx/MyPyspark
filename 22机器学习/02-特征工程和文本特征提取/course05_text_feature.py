@@ -56,6 +56,10 @@ def hanzivec():
     print(vector.get_feature_names())
 
     print(res.toarray())
+
+    doc = open('out.txt', 'w')
+    print(res.toarray(), file=doc)
+    doc.close()
     return None
 
 
