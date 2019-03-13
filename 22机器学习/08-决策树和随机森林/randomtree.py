@@ -2,20 +2,21 @@
 # -*- coding:utf-8 -*-
 __author__ = 'wsc'
 
-from sklearn.tree import DecisionTreeClassifier, export_graphviz
 import pandas as pd
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.model_selection import train_test_split
-import graphviz
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+
 """
-    决策树预测Titanic生存者
+    随机深林预测Titanic生存者
     D:/work/Titanic/gender_submission.csv
     D:/work/Titanic/test.csv
     D:/work/Titanic/train.csv
 """
 
 
-def tt():
+def rt():
     """
 
     :return:
@@ -30,28 +31,23 @@ def tt():
     x['Age'].fillna(x['Age'].mean(), inplace=True)
 
     # 分割训练集和测试集
+
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
-    print(x_train)
-    #
     dict = DictVectorizer(sparse=False)
     x_train = dict.fit_transform(x_train.to_dict(orient='records'))
     print(dict.get_feature_names())
 
     x_test = dict.transform(x_test.to_dict(orient='records'))
 
-    print(x_train)
-    dt = DecisionTreeClassifier()
-    dt.fit(x_train, y_train)
+    rmt = RandomForestClassifier()
+    param = {"n_estimators": [120, 200, 300, 500, 800, 1200], "max_depth": [5, 15, 25, 30]}
+    gc = GridSearchCV(rmt, param_grid=param, cv=2)
 
-    # 预测的准确率
-    print("预测的准确率是：", dt.score(x_test, y_test))
-
-    y_predict = dt.predict(x_test)
-    print("预测值是：", y_predict)
-
-    export_graphviz(dt, out_file="tree.dot", feature_names=['Age', 'Pclass', 'Sex=female', 'Sex=male'])
+    gc.fit(x_train, y_train)
+    print("gc在测试集上的准确率：", gc.score(x_test, y_test))
+    print("gc选择最好的模型是：", gc.best_params_)
     return None
 
 
 if __name__ == '__main__':
-    tt()
+    rt()

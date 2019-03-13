@@ -59,7 +59,7 @@ def knncls():
     # 网格搜索 优化超参数
     gc = GridSearchCV(knn, param_grid={"n_neighbors": [3, 5, 7, 9]}, cv=10)
     gc.fit(x_train, y_train)
-    knn.fit(std_x_train, std_y_train)
+    # knn.fit(std_x_train, std_y_train)
     print("gc在测试集上的准确率：", gc.score(x_test, y_test))
     print("gc在交叉验证当中最好的结果：", gc.score(x_test, y_test))
     print("gc选择最好的模型是：", gc.score(x_test, y_test))
