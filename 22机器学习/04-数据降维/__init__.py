@@ -12,6 +12,9 @@ __author__ = 'wsc'
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 import pandas as pd
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from sklearn.metrics import silhouette_score
 
 
 def var():
@@ -44,13 +47,6 @@ def pca():
 def instacard():
     """
     kaggle市场篮子分析
-    D:/work/all/aisles.csv                  商品所属具体物品类别
-    D:/work/all/departments.csv
-    D:/work/all/order_products__prior.csv   订单与商品信息
-    D:/work/all/order_products__train.csv
-    D:/work/all/orders.csv                  用户订单信息
-    D:/work/all/products.csv                商品信息
-    D:/work/all/sample_submission.csv
     :return:
     """
 
@@ -71,7 +67,27 @@ def instacard():
     # 主成分分析
     pca = PCA(n_components=0.9)
     data = pca.fit_transform(cross)
-    print(data)
+
+    x = data[:500]
+    x.shape
+
+    km = KMeans(n_clusters=4)
+    km.fit(x)
+
+    predict = km.predict(x)
+    print(predict)
+
+    # 轮廓系数‘
+    print(silhouette_score(x, predict))
+
+    plt.figure(figsize=[10, 10], dpi=80)
+    colored = ['orange', 'green', 'red', 'purple']
+    colr = [colored[i] for i in predict]
+    plt.scatter(x[:, 1], x[:, 20], color=colr)
+
+    plt.xlabel("1")
+    plt.ylabel("20")
+    plt.show()
     return None
 
 
