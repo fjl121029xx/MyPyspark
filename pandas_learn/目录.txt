@@ -1,0 +1,46 @@
+05  读取csv数据
+06  计数统计
+07  筛选计数统计
+
+
+
+
+
+PUKEY	int	10	0	0	0	-1	0				用户ID					0	0	0	0	-1	-1	0
+uname	varchar	100	0	0	0	0	0				用户名			utf8	utf8_general_ci	0	0	0	0	0	0	0
+passwd	char	32	0	0	0	0	0				密码			utf8	utf8_general_ci	0	0	0	0	0	0	0
+reg_mail	varchar	100	0	0	0	0	0				注册邮箱			utf8	utf8_general_ci	0	0	0	0	0	0	0
+reg_phone	char	11	0	-1	0	0	0				注册手机			utf8	utf8_general_ci	0	0	0	0	0	0	0
+status	tinyint	1	0	0	0	0	0			1	账户状态					0	0	0	0	0	0	0
+last_login_ip	char	15	0	0	0	0	0				最后登录IP			utf8	utf8_general_ci	0	0	0	0	0	0	0
+last_login_time	int	10	0	0	0	0	0			0	最后登录时间					0	0	0	0	0	-1	0
+login_success_count	int	10	0	0	0	0	0			0	成功登录次数					0	0	0	0	0	-1	0
+login_web_count	int	10	0	0	0	0	0			0	登录WEB题库次数					0	0	0	0	0	-1	0
+login_app_count	int	10	0	0	0	0	0			0	登录APP题库次数					0	0	0	0	0	-1	0
+reg_from	tinyint	1	0	0	0	0	0			0	注册来源  1 安卓 2 苹果 3 pc 4 安卓ipad 5 苹果ipad  6 微信  7 M站 8 批量代注册  9教育同步					0	0	0	0	0	0	0
+reg_type	tinyint	1	0	0	0	0	0			0	注册方式					0	0	0	0	0	0	0
+reg_ip	char	16	0	0	0	0	0				注册IP			utf8	utf8_general_ci	0	0	0	0	0	0	0
+third_name	tinyint	1	0	0	0	0	0			1	第三方网站或应用					0	0	0	0	0	0	0
+third_account_id	varchar	100	0	0	0	0	0				第三方用户标示			utf8	utf8_general_ci	0	0	0	0	0	0	0
+FB1Z1	varchar	100	0	0	0	0	0				备用1			utf8	utf8_general_ci	0	0	0	0	0	0	0
+FB1Z2	varchar	100	0	0	0	0	0				备用2			utf8	utf8_general_ci	0	0	0	0	0	0	0
+FB1Z3	varchar	100	0	0	0	0	0				备用3			utf8	utf8_general_ci	0	0	0	0	0	0	0
+FB1Z4	varchar	100	0	0	0	0	0				备用4			utf8	utf8_general_ci	0	0	0	0	0	0	0
+FB1Z5	varchar	100	0	0	0	0	0				备用5			utf8	utf8_general_ci	0	0	0	0	0	0	0
+EB1B1	varchar	100	0	-1	0	0	0				扩展1			utf8	utf8_general_ci	0	0	0	0	0	0	0
+EB102	varchar	100	0	0	0	0	0				扩展2			utf8	utf8_general_ci	0	0	0	0	0	0	0
+EB103	varchar	100	0	0	0	0	0				扩展3			utf8	utf8_general_ci	0	0	0	0	0	0	0
+EB104	varchar	100	0	0	0	0	0				扩展4			utf8	utf8_general_ci	0	0	0	0	0	0	0
+EB105	varchar	100	0	0	0	0	0				salt,密码盐,来自ucenter			utf8	utf8_general_ci	0	0	0	0	0	0	0
+BB1B1	tinyint	1	0	0	0	0	0			-1	审核标示					0	0	0	0	0	0	0
+BB102	tinyint	1	0	0	0	0	0			1	有效标识					0	0	0	0	0	0	0
+BB103	int	10	0	0	0	0	0			0	创建时间					0	0	0	0	0	-1	0
+BB104	varchar	20	0	0	0	0	0				创建者			utf8	utf8_general_ci	0	0	0	0	0	0	0
+BB105	int	10	0	0	0	0	0			0	创建者ID					0	0	0	0	0	-1	0
+BB106	int	10	0	0	0	0	0			0	更新时间					0	0	0	0	0	-1	0
+BB107	varchar	20	0	0	0	0	0				更新者			utf8	utf8_general_ci	0	0	0	0	0	0	0
+BB108	int	10	0	0	0	0	0			0	更新者ID					0	0	0	0	0	-1	0
+nick	varchar	40	0	-1	0	0	0							utf8	utf8_general_ci	0	0	0	0	0	0	0
+subject	int	11	0	-1	0	0	0			1						0	0	0	0	0	0	0
+area	int	11	0	-1	0	0	0			-9						0	0	0	0	0	0	0
+avatar	varchar	100	0	-1	0	0	0			'http://tiku.huatu.com/cdn/images/vhuatu/avatars/default.png'	用户头像			utf8	utf8_general_ci	0	0	0	0	0	0	0
