@@ -4,7 +4,8 @@
 08  数据分组
 09  MultiIndex用法
 10  选择列和迭代
-
+11  aggragate 分组计算
+12  transformation标准化数据
 
 PUKEY	int	10	0	0	0	-1	0				用户ID					0	0	0	0	-1	-1	0
 uname	varchar	100	0	0	0	0	0				用户名			utf8	utf8_general_ci	0	0	0	0	0	0	0
