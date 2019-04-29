@@ -6,6 +6,12 @@
 10  选择列和迭代
 11  aggragate 分组计算
 12  transformation标准化数据
+13  agg分多种计算
+14  按月分组
+15  移动复制删除列
+16  字符串操作
+17  字符串提取数据
+
 
 PUKEY	int	10	0	0	0	-1	0				用户ID					0	0	0	0	-1	-1	0
 uname	varchar	100	0	0	0	0	0				用户名			utf8	utf8_general_ci	0	0	0	0	0	0	0
