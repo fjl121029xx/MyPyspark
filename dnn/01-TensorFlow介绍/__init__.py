@@ -22,6 +22,7 @@ gra = tf.get_default_graph()
 print(gra)
 print(sum1)
 
+# placeholder 占位符
 plt = tf.placeholder(tf.float32, [None, 3])
 print(plt)
 with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
