@@ -11,6 +11,7 @@ b = tf.constant([2.0, 3.0], name="b")
 
 result = a * b
 
+print(result)
 print(tf.get_default_graph)
 
 with tf.Session() as sess:
