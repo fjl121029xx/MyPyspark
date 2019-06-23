@@ -23,7 +23,7 @@ def logi():
               'Marginal Adhesion', 'Single Epithelial Cell Size ', 'Bare Nuclei ',
               'Bland Chromatin', 'Normal Nucleoli', 'Mitoses', 'Class']
     data = pd.read_csv(
-        'http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data',
+        'breast-cancer-wisconsin.data',
         names=column)
     print(data)
 
@@ -49,5 +49,5 @@ def logi():
     return None
 
 
-if __name__ == '__name__':
+if __name__ == '__main__':
     logi()
