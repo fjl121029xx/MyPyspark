@@ -25,10 +25,10 @@ def logi():
     data = pd.read_csv(
         'breast-cancer-wisconsin.data',
         names=column)
-    print(data)
+    # print(data)
 
     # 替换缺失值
-    data.replace(to_replace='?', value=np.nan)
+    data.replace(to_replace='?', value=np.nan, inplace=True)
     #
     data = data.dropna()
 
@@ -44,7 +44,7 @@ def logi():
 
     y_predicted = lgr.predict(x_test)
     print(lgr.coef_)
-    print(lgr.score(x_train, y_test))
+    print(lgr.score(y_train, y_test))
     print(classification_report(y_test, y_predicted, labels=[2, 4], target_names=['良性', '恶性']))
     return None
 
