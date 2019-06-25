@@ -11,6 +11,7 @@ from numpy.random import RandomState
 2.定义损失函数以及选择反向传播优化的算法
 3.生成会话并且在训练数据上反复运行反向传播优化算法
 """
+# 完整神经网络
 # 定义训练数据batch的大小
 batch_size = 8
 
