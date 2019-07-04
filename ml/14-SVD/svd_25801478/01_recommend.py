@@ -95,4 +95,4 @@ def recommend(dataMat, user, N=5, simMeas=cosSim, estMethod=svdEst, percentage=0
 
 if __name__ == "__main__":
     testdata = loadExData()
-    recommend(testdata, 1, N=2, percentage=0.9)
+    print(recommend(testdata, 1, N=2, percentage=0.9))

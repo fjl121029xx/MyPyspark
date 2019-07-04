@@ -11,18 +11,18 @@ from numpy.linalg import svd
 from math import log
 from numpy import asarray, sum
 
+# 潜在语义索引
+# 当我们试图通过比较词来找到相关的文本时，存在着难以解决的局限性，那就是在搜索中我们实际想要去比较的不是词，而是隐藏在词之后的意义和概念。潜语义分析试图去解决这个问题，它把词和文档都映射到一个‘概念’空间并在这个空间内进行比较（注：也就是一种降维技术）。
+
 titles = ["The Neatest Little Guide to Stock Market Investing",
           "Investing For Dummies, 4th Edition",
-          "The Little Book of Common Sense Investing: The Only Way to \
-          Guarantee Your Fair Share of Stock Market Returns",
+          "The Little Book of Common Sense Investing: The Only Way to Guarantee Your Fair Share of Stock Market Returns",
           "The Little Book of Value Investing",
           "Value Investing: From Graham to Buffett and Beyond",
-          "Rich Dad's Guide to Investing: What the Rich Invest in,\
-          That the Poor and the Middle Class Do Not!",
+          "Rich Dad's Guide to Investing: What the Rich Invest in, That the Poor and the Middle Class Do Not!",
           "Investing in Real Estate, 5th Edition",
           "Stock Investing For Dummies",
-          "Rich Dad's Advisors: The ABC1s of Real Estate Investing:\
-          The Secrets of Finding Hidden Profits Most Investors Miss"
+          "Rich Dad's Advisors: The ABC1s of Real Estate Investing: The Secrets of Finding Hidden Profits Most Investors Miss"
           ]
 stopwords = ['and', 'edition', 'for', 'in', 'little', 'of', 'the ', 'to']
 ignorechars = ''',:'!'''
@@ -75,15 +75,6 @@ class LSA(object):
         print(self.S)
         print('Here are first 3 colums of the U matrix')
         print(-1 * self.U[:, 0:2])
-
-        x = self.U[:, 0:2][0, :]
-        print(x)
-        y = self.U[:, 0:2][1, :]
-        print(y)
-
-        plt.scatter(x, y)
-        plt.show()
-
         print('Here are the first 3 rows of the Vt matrix')
         print(-1 * self.Vt[0:2, :])
 
@@ -95,4 +86,4 @@ for t in titles:
 mylsa.build()
 mylsa.printA()
 mylsa.calc()
-mylsa.printSVD()
+# mylsa.printSVD()
