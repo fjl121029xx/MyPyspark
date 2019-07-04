@@ -40,7 +40,7 @@ def recoverBySVD(imgMat, k):
 
 
 # -------------------- main --------------------- #
-A = getImgAsMatFromFile('women.png')
+A = getImgAsMatFromFile('wed.jpg')
 plotImg(A)
-A_new = recoverBySVD(A, 10)
+A_new = recoverBySVD(A, 15)
 plotImg(A_new)
