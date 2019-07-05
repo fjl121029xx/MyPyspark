@@ -12,6 +12,8 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report
+from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score, accuracy_score, roc_curve
+import matplotlib.pyplot as plt
 
 
 def logi():
@@ -43,9 +45,11 @@ def logi():
     lgr.fit(x_train, y_train)
 
     y_predicted = lgr.predict(x_test)
-    print(lgr.coef_)
-    print(lgr.score(y_train, y_test))
+    # 权重
+    print('权重', lgr.coef_)
+    print(lgr.score(x_test, y_test))
     print(classification_report(y_test, y_predicted, labels=[2, 4], target_names=['良性', '恶性']))
+
     return None
 
 

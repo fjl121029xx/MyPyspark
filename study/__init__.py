@@ -16,4 +16,4 @@ __author__ = 'wsc'
 
 import numpy as np
 
-print(np.zeros((10, 1)))
+print(np.arange(-5, 5))
