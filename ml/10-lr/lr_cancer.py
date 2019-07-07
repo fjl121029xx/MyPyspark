@@ -43,6 +43,8 @@ def logi():
     lgr = LogisticRegression(penalty='l2', C=1.2)
 
     lgr.fit(x_train, y_train)
+    print(x_train.shape)
+    print(y_train.shape)
 
     y_predicted = lgr.predict(x_test)
     # 权重
