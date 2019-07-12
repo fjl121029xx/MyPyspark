@@ -11,7 +11,7 @@ ser1 = pd.Series([1, 2, 3, 4, 5])
 ser2 = pd.Series([4, 5, 6, 7, 8])
 
 # print(ser1.isin(ser2))
-# print(ser2[~ser1.isin(ser2)])
+# print(ser2[~ser1.isin(ser2)])3
 
 # 取出非公有的数据
 ser_u = pd.Series(np.union1d(ser1, ser2))
