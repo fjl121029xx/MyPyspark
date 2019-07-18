@@ -34,12 +34,15 @@ def ecludSim(inA, inB):
 def pearsSim(inA, inB):
     if len(inA) < 3:
         return 1.0
+
+    # 应用公式0.5*value+0.5可以将相关系数矩阵的值域由[-1,1]映射为[0,1]。
     return 0.5 + 0.5 * corrcoef(inA, inB, rowvar=0)[0][1]
 
 
 def cosSim(inA, inB):
     num = float(inA.T * inB)
     denom = la.norm(inA) * la.norm(inB)
+    #
     return 0.5 + 0.5 * (num / denom)
 
 
