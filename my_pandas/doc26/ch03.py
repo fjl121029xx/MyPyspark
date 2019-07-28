@@ -8,7 +8,6 @@ import pandas as pd
 data_index = pd.date_range("2019-04-24", periods=6)
 
 df = pd.DataFrame(np.random.randn(6, 4), index=data_index, columns=list("ABCD"))
-
 print(df)
 
 # 2 iloc,提取第四行shuju
