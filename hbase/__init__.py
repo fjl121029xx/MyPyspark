@@ -9,6 +9,7 @@ class HBaseUtil(object):
 
     def __init__(self):
         self.row_stop = 0
+        self.recourd_count = 0
 
     # 获取一个连接
     @staticmethod
@@ -27,23 +28,38 @@ class HBaseUtil(object):
         conn = self.get_hbase_connection()
         t = happybase.Table(table, conn)
         scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=10)
-
-        if len(scan) == 0:
-            return 0
-
+        # print(self.recourd_count)
+        count = 0
+        for_size = 0
         for key, value in scan:
             # print(value)
 
-            print('i:key', str(key, encoding='utf-8'))
-            print('i:exerciseNum', str(dict(value)['i:exerciseNum'.encode()], encoding='utf-8'))
-            print('i:phone', str(dict(value)['i:phone'.encode()], encoding='utf-8'))
-            print('i:predictScore', str(dict(value)['i:predictScore'.encode()], encoding='utf-8'))
-            print('i:grade', str(dict(value)['i:grade'.encode()], encoding='utf-8'))
-            print("----------------------------------------")
-            # print(dict(value.encode())['i:exerciseDay'])
-            self.row_stop = key
+            if for_size < 10:
+                count += 1
+                self.recourd_count += 1
 
-        print(self.row_stop)
+                properties = {'i:key': str(key, encoding='utf-8'),
+                              'i:exerciseNum': str(dict(value)['i:exerciseNum'.encode()], encoding='utf-8'),
+                              'i:phone': str(dict(value)['i:phone'.encode()], encoding='utf-8'),
+                              'i:predictScore': str(dict(value)['i:predictScore'.encode()], encoding='utf-8'),
+                              'i:grade': str(dict(value)['i:grade'.encode()], encoding='utf-8')}
+            for_size += 1
+            # print(properties)
+            if for_size == 10:
+                self.row_stop = key
+
+        print(count)
+        if count < 10:
+            self.recourd_count += 1
+            scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix, limit=10)
+            for key, value in scan:
+                properties = {'i:key': str(key, encoding='utf-8'),
+                              'i:exerciseNum': str(dict(value)['i:exerciseNum'.encode()], encoding='utf-8'),
+                              'i:phone': str(dict(value)['i:phone'.encode()], encoding='utf-8'),
+                              'i:predictScore': str(dict(value)['i:predictScore'.encode()], encoding='utf-8'),
+                              'i:grade': str(dict(value)['i:grade'.encode()], encoding='utf-8')}
+            return 0
+        # print(self.row_stop)
         return 1
 
 
@@ -55,3 +71,4 @@ if __name__ == '__main__':
             i = h.scan_table(table='scaa', row_start=h.row_stop, row_stop=None, row_prefix=None)
             if i == 0:
                 break
+    print(int(h.recourd_count - (h.recourd_count / 10)))
