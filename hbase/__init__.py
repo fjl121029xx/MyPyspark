@@ -3,6 +3,7 @@
 __author__ = 'fjl'
 
 import happybase
+import sensorsanalytics
 
 
 class HBaseUtil(object):
@@ -11,6 +12,14 @@ class HBaseUtil(object):
         self.row_stop = 0
         self.recourd_count = 0
         self.l = list()
+        self.SA_SERVER_URL = 'https://datax-api.huatu.com/sa?project=default'
+        # 初始化一个 Consumer，用于数据发送
+        # DefaultConsumer 是同步发送数据，因此不要在任何线上的服务中使用此 Consumer
+        consumer = sensorsanalytics.DefaultConsumer(self.SA_SERVER_URL)
+        # 使用 Consumer 来构造 SensorsAnalytics 对象
+        sa = sensorsanalytics.SensorsAnalytics(consumer)
+        self.sa = sa
+        self.zero_count = 0
 
     # 获取一个连接
     @staticmethod
@@ -29,7 +38,7 @@ class HBaseUtil(object):
         conn = self.get_hbase_connection()
         t = happybase.Table(table, conn)
         scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=100)
-        # print(self.recourd_count)
+        # print(self.recourd_count)op
         count = 0
         for_size = 0
         for key, value in scan:
@@ -37,14 +46,36 @@ class HBaseUtil(object):
 
             if for_size < 100:
                 count += 1
-                self.recourd_count += 1
+                # 记录用户登录事件
+                distinct_id = str(dict(value)['i:phone'.encode()], encoding='utf-8')
+                if distinct_id == '':
+                    self.zero_count += 1;
+                    continue
 
-                properties = {'i:key': str(key, encoding='utf-8'),
-                              'i:exerciseNum': str(dict(value)['i:exerciseNum'.encode()], encoding='utf-8'),
-                              'i:phone': str(dict(value)['i:phone'.encode()], encoding='utf-8'),
-                              'i:predictScore': str(dict(value)['i:predictScore'.encode()], encoding='utf-8'),
-                              'i:grade': str(dict(value)['i:grade'.encode()], encoding='utf-8')}
-                self.l.append(properties)
+                self.recourd_count += 1
+                grade = str(dict(value)['i:grade'.encode()], encoding='utf-8')
+                print(distinct_id)
+                g_list = grade.split("_")[1:-1]
+
+                corr = 0
+                num = 0
+                for r in g_list:
+                    corr += int(r.split(":")[1])
+                    num += int(r.split(":")[2])
+
+                if num == 0:
+                    accuracy = 0.0
+                else:
+                    accuracy = corr / num
+
+                properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
+                              'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
+                              'HuaTuOnline_accuracy': accuracy}
+
+                self.sa.profile_set(distinct_id, properties, is_login_id=True)
+                # print(distinct_id, properties)
+                # self.l.append(properties)
+
             for_size += 1
             # print(properties)
             if for_size == 100:
@@ -55,15 +86,32 @@ class HBaseUtil(object):
             self.recourd_count += 1
             scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix)
             for key, value in scan:
-                properties = {'i:key': str(key, encoding='utf-8'),
-                              'i:exerciseNum': str(dict(value)['i:exerciseNum'.encode()], encoding='utf-8'),
-                              'i:phone': str(dict(value)['i:phone'.encode()], encoding='utf-8'),
-                              'i:predictScore': str(dict(value)['i:predictScore'.encode()], encoding='utf-8'),
-                              'i:grade': str(dict(value)['i:grade'.encode()], encoding='utf-8')}
-                self.l.append(properties)
+                grade = str(dict(value)['i:grade'.encode()], encoding='utf-8')
+                g_list = grade.split("_")[1:-1]
+
+                corr = 0
+                num = 0
+                for r in g_list:
+                    corr += int(r.split(":")[1])
+                    num += int(r.split(":")[2])
+
+                if num == 0:
+                    accuracy = 0.0
+                else:
+                    accuracy = corr / num
+                # 记录用户登录事件
+                distinct_id = str(dict(value)['i:phone'.encode()], encoding='utf-8')
+
+                properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
+                              'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
+                              'HuaTuOnline_accuracy': accuracy}
+                self.sa.profile_set(distinct_id, properties, is_login_id=True)
+                # self.l.append(properties)
+            conn.close()
             return 0
         # print(self.row_stop)
-        return self.l.append(properties)
+        conn.close()
+        return 1
 
 
 if __name__ == '__main__':
@@ -74,6 +122,5 @@ if __name__ == '__main__':
             i = h.scan_table(table='scaa', row_start=h.row_stop, row_stop=None, row_prefix=None)
             if i == 0:
                 break
-
-
-    print(len(h.l))
+    print(h.zero_count)
+    print(h.recourd_count)
