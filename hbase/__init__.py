@@ -12,7 +12,7 @@ class HBaseUtil(object):
         self.row_stop = 0
         self.recourd_count = 0
         self.l = list()
-        self.SA_SERVER_URL = 'https://datax-api.huatu.com/sa?project=default'
+        self.SA_SERVER_URL = 'https://datax-api.huatu.com/sa?project=production'
         # 初始化一个 Consumer，用于数据发送
         # DefaultConsumer 是同步发送数据，因此不要在任何线上的服务中使用此 Consumer
         consumer = sensorsanalytics.DefaultConsumer(self.SA_SERVER_URL)
@@ -38,23 +38,21 @@ class HBaseUtil(object):
         conn = self.get_hbase_connection()
         t = happybase.Table(table, conn)
         scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=100)
-        # print(self.recourd_count)op
+        print(self.recourd_count)
         count = 0
         for_size = 0
         for key, value in scan:
-            # print(value)
 
             if for_size < 100:
                 count += 1
                 # 记录用户登录事件
-                distinct_id = str(dict(value)['i:phone'.encode()], encoding='utf-8')
+                distinct_id = str(dict(value)['i:phone'.encode()])
                 if distinct_id == '':
                     self.zero_count += 1;
                     continue
 
                 self.recourd_count += 1
-                grade = str(dict(value)['i:grade'.encode()], encoding='utf-8')
-                # print(distinct_id)
+                grade = str(dict(value)['i:grade'.encode()])
                 g_list = grade.split("_")[1:-1]
 
                 corr = 0
@@ -72,21 +70,17 @@ class HBaseUtil(object):
                               'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
                               'HuaTuOnline_accuracy': accuracy}
 
-                self.sa.profile_set(distinct_id, properties, is_login_id=True)
-                # print(distinct_id, properties)
-                # self.l.append(properties)
+                # self.sa.profile_set(distinct_id, properties, is_login_id=True)
+                self.l.append((distinct_id, properties))
 
             for_size += 1
-            # print(properties)
-            # if for_size == 100:
             self.row_stop = key
 
-        print(count)
         if count < 100:
             self.recourd_count += 1
             scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix)
             for key, value in scan:
-                grade = str(dict(value)['i:grade'.encode()], encoding='utf-8')
+                grade = str(dict(value)['i:grade'.encode()])
                 g_list = grade.split("_")[1:-1]
 
                 corr = 0
@@ -100,16 +94,16 @@ class HBaseUtil(object):
                 else:
                     accuracy = corr / num
                 # 记录用户登录事件
-                distinct_id = str(dict(value)['i:phone'.encode()], encoding='utf-8')
+                distinct_id = str(dict(value)['i:phone'.encode()])
 
                 properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
                               'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
                               'HuaTuOnline_accuracy': accuracy}
-                self.sa.profile_set(distinct_id, properties, is_login_id=True)
-                # self.l.append(properties)
+                # self.sa.profile_set(distinct_id, properties, is_login_id=True)
+                self.l.append((distinct_id, properties))
+
             conn.close()
             return 0
-        # print(self.row_stop)
         conn.close()
         return 1
 
@@ -117,10 +111,14 @@ class HBaseUtil(object):
 if __name__ == '__main__':
     h = HBaseUtil()
     h.scan_table(table='scaa', row_start=None, row_stop=None, row_prefix=None)
+
     if h.row_stop != 0:
         while True:
             i = h.scan_table(table='scaa', row_start=h.row_stop, row_stop=None, row_prefix=None)
             if i == 0:
                 break
+    for tup in h.l:
+        h.sa.profile_set(tup[0], tup[1], is_login_id=True)
+
     print(h.zero_count)
     print(h.recourd_count)
