@@ -117,6 +117,7 @@ if __name__ == '__main__':
             i = h.scan_table(table='scaa', row_start=h.row_stop, row_stop=None, row_prefix=None)
             if i == 0:
                 break
+
     for tup in h.l:
         h.sa.profile_set(tup[0], tup[1], is_login_id=True)
 
