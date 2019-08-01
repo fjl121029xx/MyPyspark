@@ -4,7 +4,9 @@ __author__ = 'fjl'
 
 import happybase
 import sensorsanalytics
+import datetime
 import time
+from datetime import datetime
 
 
 class HBaseUtil(object):
@@ -22,6 +24,8 @@ class HBaseUtil(object):
         sa = sensorsanalytics.SensorsAnalytics(consumer)
         self.sa = sa
         self.zero_count = 0
+        today = datetime.today()
+        self.to = today.strftime('%Y%m%d')
 
     # 获取一个连接
     @staticmethod
@@ -92,25 +96,50 @@ if __name__ == '__main__':
     h = HBaseUtil()
     h.scan_table(table='scaa', row_start=None, row_stop=None, row_prefix=None)
 
+    error_list = list()
     if h.row_stop != 0:
         while True:
             i = h.scan_table(table='scaa', row_start=h.row_stop, row_stop=None, row_prefix=None)
             if i == 0:
                 break
 
-    l_len = int(len(h.l) / 100)
+    l_len = int(len(h.l) / 1000)
     for i in range(0, l_len):
-        i_s = i * 100
-        i_e = (i + 1) * 100
+        i_s = i * 1000
+        i_e = (i + 1) * 1000
 
         if i_e > len(h.l):
             i_e = -1
 
         print(i_s, i_e)
         for tup in h.l[i_s:i_e]:
-            # print(tup)
-            h.sa.profile_set(tup[0], tup[1], is_login_id=True)
-        time.sleep(1)
+            try:
+                h.sa.profile_set(tup[0], tup[1], is_login_id=True)
+            except sensorsanalytics.urllib2.URLError:
+                error_list.append(tup)
+                print(len(error_list))
+            else:
+                pass
+        # time.sleep(3)
+
+    print(len(error_list))
+    l_len = int(len(error_list) / 1000)
+    for i in range(0, l_len):
+        i_s = i * 1000
+        i_e = (i + 1) * 1000
+
+        if i_e > len(error_list):
+            i_e = -1
+
+        print(i_s, i_e)
+        for tup in error_list[i_s:i_e]:
+            try:
+                h.sa.profile_set(tup[0], tup[1], is_login_id=True)
+            except sensorsanalytics.urllib2.URLError:
+                pass
+            else:
+                pass
+        time.sleep(5)
 
     print(h.zero_count)
     print(h.recourd_count)
