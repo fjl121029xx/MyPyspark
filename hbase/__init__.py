@@ -37,13 +37,14 @@ class HBaseUtil(object):
     def scan_table(self, table, row_start, row_stop, row_prefix):
         conn = self.get_hbase_connection()
         t = happybase.Table(table, conn)
-        scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=100)
-        print(self.recourd_count)
+        scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=1000)
+        # print(self.recourd_count)
         count = 0
         for_size = 0
+
         for key, value in scan:
 
-            if for_size < 100:
+            if for_size < 1000:
                 count += 1
                 # 记录用户登录事件
                 distinct_id = str(dict(value)['i:phone'.encode()])
@@ -76,7 +77,8 @@ class HBaseUtil(object):
             for_size += 1
             self.row_stop = key
 
-        if count < 100:
+        print(self.recourd_count)
+        if count < 1000:
             self.recourd_count += 1
             scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix)
             for key, value in scan:
@@ -119,6 +121,7 @@ if __name__ == '__main__':
                 break
 
     for tup in h.l:
+        print(tup)
         h.sa.profile_set(tup[0], tup[1], is_login_id=True)
 
     print(h.zero_count)
