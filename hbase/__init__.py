@@ -54,7 +54,7 @@ class HBaseUtil(object):
 
                 self.recourd_count += 1
                 grade = str(dict(value)['i:grade'.encode()], encoding='utf-8')
-                print(distinct_id)
+                # print(distinct_id)
                 g_list = grade.split("_")[1:-1]
 
                 corr = 0
@@ -78,10 +78,10 @@ class HBaseUtil(object):
 
             for_size += 1
             # print(properties)
-            if for_size == 100:
-                self.row_stop = key
+            # if for_size == 100:
+            self.row_stop = key
 
-        # print(count)
+        print(count)
         if count < 100:
             self.recourd_count += 1
             scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix)
