@@ -4,11 +4,13 @@ __author__ = 'fjl'
 
 import happybase
 import sensorsanalytics
+import time
 
 
 class HBaseUtil(object):
 
     def __init__(self):
+        self.row_start = 0
         self.row_stop = 0
         self.recourd_count = 0
         self.l = list()
@@ -35,75 +37,51 @@ class HBaseUtil(object):
         return t.row(rowkey)
 
     def scan_table(self, table, row_start, row_stop, row_prefix):
+
+        self.row_start = row_start
+
         conn = self.get_hbase_connection()
         t = happybase.Table(table, conn)
         scan = t.scan(row_start=row_start, row_stop=row_stop, row_prefix=row_prefix, limit=1000)
         # print(self.recourd_count)
         count = 0
-        for_size = 0
 
         for key, value in scan:
 
-            if for_size < 1000:
-                count += 1
-                # 记录用户登录事件
-                distinct_id = str(dict(value)['i:phone'.encode()])
-                if distinct_id == '':
-                    self.zero_count += 1;
-                    continue
+            count += 1
+            # 记录用户登录事件
+            distinct_id = str(dict(value)['i:phone'.encode()])
+            if distinct_id == '':
+                self.zero_count += 1
+                continue
 
-                self.recourd_count += 1
-                grade = str(dict(value)['i:grade'.encode()])
-                g_list = grade.split("_")[1:-1]
+            self.recourd_count += 1
+            grade = str(dict(value)['i:grade'.encode()])
+            g_list = grade.split("_")[1:-1]
 
-                corr = 0
-                num = 0
-                for r in g_list:
-                    corr += int(r.split(":")[1])
-                    num += int(r.split(":")[2])
+            corr = 0
+            num = 0
+            for r in g_list:
+                corr += int(r.split(":")[1])
+                num += int(r.split(":")[2])
 
-                if num == 0:
-                    accuracy = 0.0
-                else:
-                    accuracy = corr / num
+            if num == 0:
+                accuracy = 0.0
+            else:
+                accuracy = corr / num
 
-                properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
-                              'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
-                              'HuaTuOnline_accuracy': accuracy}
+            properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
+                          'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
+                          'HuaTuOnline_accuracy': accuracy}
 
-                # self.sa.profile_set(distinct_id, properties, is_login_id=True)
-                self.l.append((distinct_id, properties))
-
-            for_size += 1
+            # self.sa.profile_set(distinct_id, properties, is_login_id=True)
+            self.l.append((distinct_id, properties))
             self.row_stop = key
 
-        print(self.recourd_count)
+        if self.row_stop == self.row_start:
+            return 0
+
         if count < 1000:
-            self.recourd_count += 1
-            scan = t.scan(row_start=self.row_stop, row_stop=self.row_stop, row_prefix=row_prefix)
-            for key, value in scan:
-                grade = str(dict(value)['i:grade'.encode()])
-                g_list = grade.split("_")[1:-1]
-
-                corr = 0
-                num = 0
-                for r in g_list:
-                    corr += int(r.split(":")[1])
-                    num += int(r.split(":")[2])
-
-                if num == 0:
-                    accuracy = 0.0
-                else:
-                    accuracy = corr / num
-                # 记录用户登录事件
-                distinct_id = str(dict(value)['i:phone'.encode()])
-
-                properties = {'HuaTuOnline_exercises': float(dict(value)['i:exerciseNum'.encode()]),
-                              'HuaTuOnline_prediction_score': float(dict(value)['i:predictScore'.encode()]),
-                              'HuaTuOnline_accuracy': accuracy}
-                # self.sa.profile_set(distinct_id, properties, is_login_id=True)
-                self.l.append((distinct_id, properties))
-
             conn.close()
             return 0
         conn.close()
@@ -120,9 +98,19 @@ if __name__ == '__main__':
             if i == 0:
                 break
 
-    for tup in h.l:
-        print(tup)
-        h.sa.profile_set(tup[0], tup[1], is_login_id=True)
+    l_len = int(len(h.l) / 100)
+    for i in range(0, l_len):
+        i_s = i * 100
+        i_e = (i + 1) * 100
+
+        if i_e > len(h.l):
+            i_e = -1
+
+        print(i_s, i_e)
+        for tup in h.l[i_s:i_e]:
+            # print(tup)
+            h.sa.profile_set(tup[0], tup[1], is_login_id=True)
+        time.sleep(1)
 
     print(h.zero_count)
     print(h.recourd_count)
