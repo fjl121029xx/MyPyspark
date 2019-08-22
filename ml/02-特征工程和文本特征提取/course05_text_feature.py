@@ -64,4 +64,4 @@ def hanzivec():
 
 
 if __name__ == '__main__':
-    hanzivec()
+    cutword()
