@@ -30,7 +30,7 @@ class TiebaSpider:
 
         self.str = ""
         for k in soup.find_all('p')[3:]:
-            self.str = self.str + k.get_text() + "\n"
+            self.str = self.str + "\t" + k.get_text() + "\n"
 
         return self.str
 
