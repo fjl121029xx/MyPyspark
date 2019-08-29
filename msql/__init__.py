@@ -10,7 +10,7 @@ https://www.runoob.com/python3/python3-mysql.html
 import pymysql
 
 # 打开数据库连接
-db = pymysql.connect("localhost", "testuser", "test123", "TESTDB")
+db = pymysql.connect("192.168.100.154", "vhuatu", "vhuatu_2013", "vhuatu")
 
 # 使用 cursor() 方法创建一个游标对象 cursor
 cursor = db.cursor()
