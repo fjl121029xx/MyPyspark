@@ -38,8 +38,8 @@ with open("E:\\ztk_question_new\\part-00000-52499296-627b-4c67-b8e5-06a93507a3d3
             workslist.append(" ".join(list(i.word for i in psg.cut(dic['stem']) if i.flag in expectedNature)))
         else:
             pass
-# print(len(workslist))
-# print(len(titlelist))
+print(len(workslist))
+print(len(titlelist))
 # print(titlelist)
 # print(corpus)
 
