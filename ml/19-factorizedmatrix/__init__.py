@@ -39,17 +39,17 @@ def matrix_factorization(R,
                          steps=5000, alpha=0.0002, beta=0.02):
     Q = Q.T
     for step in range(steps):
-        print('len(R)', len(R))
+        # print('len(R)', len(R))
         for i in range(len(R)):
-            print(i)
-            print('len(R[i])', len(R[i]))
+            # print(i)
+            # print('len(R[i])', len(R[i]))
             for j in range(len(R[i])):
-                print(j)
-                print('R[i][j]', R[i][j])
+                # print(j)
+                # print('R[i][j]', R[i][j])
                 if R[i][j] > 0:
-                    print('numpy.dot(P[i, :], Q[:, j])', numpy.dot(P[i, :], Q[:, j]))
+                    # print('numpy.dot(P[i, :], Q[:, j])', numpy.dot(P[i, :], Q[:, j]))
                     eij = R[i][j] - numpy.dot(P[i, :], Q[:, j])
-                    print('eij', eij)
+                    # print('eij', eij)
                     for k in range(K):
                         P[i][k] = P[i][k] + alpha * (2 * eij * Q[k][j] - beta * P[i][k])
                         Q[k][j] = Q[k][j] + alpha * (2 * eij * P[i][k] - beta * Q[k][j])
