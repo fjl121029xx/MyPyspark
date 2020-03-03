@@ -5,9 +5,9 @@ __author__ = 'fjl'
 import pickle
 import uuid
 import time
-from kafka import KafkaConsumer
-from kafka.structs import TopicPartition, OffsetAndMetadata
-from kafka import ConsumerRebalanceListener
+from mykafka import KafkaConsumer
+from mykafka.structs import TopicPartition, OffsetAndMetadata
+from mykafka import ConsumerRebalanceListener
 
 consumer = KafkaConsumer(
     bootstrap_servers=['192.168.100.68:9092', '192.168.100.70:9092', '192.168.100.72:9092'],
