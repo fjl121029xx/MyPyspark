@@ -13,15 +13,8 @@ headers = {
 }
 data = {
     'code': """
-    import java.text.SimpleDateFormat
-    import java.util
-    import java.util.Calendar
-    import java.util.regex.Pattern
     
-    import org.apache.spark.sql.Row
-    import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
-    import org.apache.spark.sql.types.{DataType, DataTypes, StructType} 
-    spark.udf.register("compare_sum_rate", new UserDefinedAggregateFunction() {
+    spark.udf.register("compare_sum", new UserDefinedAggregateFunction() {
 
       def getTime(date: String, date_type: String, count: Int): String = {
     val ca = Calendar.getInstance()
@@ -86,7 +79,7 @@ data = {
 
   override def dataType: DataType =
   //        DataTypes.createMapType(DataTypes.createArrayType(DataTypes.StringType), DataTypes.DoubleType)
-    DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType)
+    DataTypes.createMapType(DataTypes.StringType, DataTypes.DoubleType)
 
   override def deterministic: Boolean = true
 
@@ -107,20 +100,20 @@ data = {
     val ca = Calendar.getInstance()
     ca.set(day.substring(0, 4).toInt, day.substring(4, 6).toInt - 1, day.substring(6, 8).toInt)
     dimen_mode match {
-      case "y" => ca.get(Calendar.YEAR).toString
+      case "y" => ca.get(Calendar.YEAR).toString + "年"
       case "yq" =>
         val m = ca.get(Calendar.MONTH)
         if (m >= 0 && m < 3) {
-          ca.get(Calendar.YEAR).toString + "1"
+          ca.get(Calendar.YEAR).toString + "年1季度"
         } else if (m >= 3 && m < 6) {
-          ca.get(Calendar.YEAR).toString + "2"
+          ca.get(Calendar.YEAR).toString + "年2季度"
         } else if (m >= 6 && m < 9) {
-          ca.get(Calendar.YEAR).toString + "3"
+          ca.get(Calendar.YEAR).toString + "年3季度"
         } else {
-          ca.get(Calendar.YEAR).toString + "4"
+          ca.get(Calendar.YEAR).toString + "年4季度"
         }
-      case "ym" => ca.get(Calendar.YEAR).toString + "" + (ca.get(Calendar.MONTH) + 1) + ""
-      case "yw" => ca.get(Calendar.YEAR).toString + "" + (ca.get(Calendar.WEEK_OF_YEAR)) + ""
+      case "ym" => ca.get(Calendar.YEAR).toString + "年" + (ca.get(Calendar.MONTH) + 1) + "月"
+      case "yw" => ca.get(Calendar.YEAR).toString + "年" + (ca.get(Calendar.WEEK_OF_YEAR)) + "周"
       case "ymd" =>
         var m = (ca.get(Calendar.MONTH) + 1).toString
         var d = ca.get(Calendar.DAY_OF_MONTH).toString
@@ -130,7 +123,7 @@ data = {
         if (d.length < 2) {
           d = "0" + d
         }
-        ca.get(Calendar.YEAR) + "" + m + "" + d + ""
+        ca.get(Calendar.YEAR) + "年" + m + "月" + d + "日"
       case _ =>
         throw new RuntimeException("nonexistent dimen_mode. [y,yq,ym,yw,ymd]]")
     }
@@ -161,7 +154,7 @@ data = {
     val rd = dimensions.filter(f => hasRD(f.toString))(0).toString
 
     val dimensions_othr = dimensions.filter(f => !hasRD(f.toString))
-    val reportdate = rd.replaceAll("-", "").toInt
+    val reportdate = rd.split(" ")(0).replaceAll("-", "").toInt
     val date2dimen = dayformat(reportdate.toString, input.getAs[String](2))
     // 聚合key
     val aggr_key = generateKey(date2dimen, dimensions_othr)
@@ -265,7 +258,7 @@ data = {
     val time_diff_type = row.getAs[String](2)
     val time_diff: Int = -1
 
-    val result: Map[String, String] = dimen_mode match {
+    val result: Map[String, Double] = dimen_mode match {
       case "y" =>
         time_diff_type match {
           case "0" =>
@@ -288,16 +281,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
 
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
           case _ => throw new RuntimeException("dimen_mode y must match time_diff_type[0]")
         }
@@ -310,7 +294,7 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4).toInt - 1, 1)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1, 1)
               ca.add(Calendar.YEAR, time_diff)
               val day = getTime(ca)
 
@@ -323,15 +307,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
 
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case "0" =>
@@ -342,7 +318,7 @@ data = {
 
               val ca = Calendar.getInstance()
 
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4).toInt - 1, 1)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1, 1)
               ca.add(Calendar.MONTH, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -353,16 +329,7 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case _ => throw new RuntimeException("dimen_mode ym must match time_diff_type[0,1]")
@@ -377,7 +344,7 @@ data = {
 
               val ca = Calendar.getInstance()
 
-              val m = rd.substring(4).toInt match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -394,16 +361,7 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case "0" =>
@@ -413,7 +371,7 @@ data = {
               val rd = k(0)
               val ca = Calendar.getInstance()
 
-              val m = rd.substring(4).toInt match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -430,16 +388,7 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case _ => throw new RuntimeException("dimen_mode yq must match time_diff_type[0,1]")
@@ -455,7 +404,7 @@ data = {
               val ca = Calendar.getInstance()
               ca.setFirstDayOfWeek(Calendar.MONDAY)
               ca.set(Calendar.YEAR, rd.substring(0, 4).toInt)
-              ca.set(Calendar.WEEK_OF_YEAR, rd.substring(4).toInt)
+              ca.set(Calendar.WEEK_OF_YEAR, rd.substring(rd.indexOf("年") + 1, rd.indexOf("周")).toInt)
               ca.add(Calendar.YEAR, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -466,16 +415,7 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case "0" =>
@@ -487,7 +427,7 @@ data = {
               val ca = Calendar.getInstance()
               ca.setFirstDayOfWeek(Calendar.MONDAY)
               ca.set(Calendar.YEAR, rd.substring(0, 4).toInt)
-              ca.set(Calendar.WEEK_OF_YEAR, rd.substring(4).toInt)
+              ca.set(Calendar.WEEK_OF_YEAR, rd.substring(rd.indexOf("年") + 1, rd.indexOf("周")).toInt)
               ca.add(Calendar.WEEK_OF_YEAR, time_diff)
               val day = getTime(ca)
 
@@ -499,16 +439,7 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case _ => throw new RuntimeException("dimen_mode yw must match time_diff_type[0,1]")
@@ -522,7 +453,7 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4, 6).toInt - 1, rd.substring(6, 8).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
               ca.add(Calendar.YEAR, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -534,16 +465,7 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case "2" =>
@@ -553,7 +475,7 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4, 6).toInt - 1, rd.substring(6, 8).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
               ca.add(Calendar.MONTH, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -565,16 +487,7 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
 
           case "1" =>
@@ -585,7 +498,7 @@ data = {
 
               val ca = Calendar.getInstance()
               ca.setFirstDayOfWeek(Calendar.MONDAY)
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4, 6).toInt - 1, rd.substring(6, 8).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
               ca.add(Calendar.WEEK_OF_YEAR, time_diff)
 
               val day = getTime(ca)
@@ -598,24 +511,16 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
-            })
+            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
             result_dog
+
           case "0" =>
             val dog2 = dog.map(f => {
               val k = f._1.split("_")
               val k_1 = k.mkString("_")
               val rd = k(0)
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(4, 6).toInt - 1, rd.substring(6, 8).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
               ca.add(Calendar.DAY_OF_YEAR, time_diff)
               val day = getTime(ca)
 
@@ -628,20 +533,10 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-
-
             val result_dog = dog.map(m => {
-              var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.0) {
-                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
-                m._1 -> m3.toString
-              } else {
-                m._1 -> "-"
-              }
-
+              m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00))
             })
             result_dog
-
 
           case _ => throw new RuntimeException(
             "dimen_mode ymd must match time_diff_type[0,1,2,3]")
@@ -661,7 +556,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77731
+sid = 77688
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),

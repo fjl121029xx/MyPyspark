@@ -14,7 +14,8 @@ headers = {
 # select compare_sum(Array(report_date),food_price_amount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`
 data = {
     'code': """
-select  compare_sum_rate(ARRAY(CONCAT(SUBSTR(col_1,1,4),'-', SUBSTR(col_1,6,2),'-', SUBSTR(col_1,9,2))),col_6,'ymd','1') as m from `db_yqs_p_505`.`tbl_p_79466_1577179724` """
+    select report_date_format('2020-03-05 15:26:21','ymdh') as report_date
+"""
     ,
     'kind': "sql"
 }
