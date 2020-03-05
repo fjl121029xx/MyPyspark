@@ -86,7 +86,7 @@ data = {
 
   override def dataType: DataType =
   //        DataTypes.createMapType(DataTypes.createArrayType(DataTypes.StringType), DataTypes.DoubleType)
-    DataTypes.createMapType(DataTypes.StringType, DataTypes.DoubleType)
+    DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType)
 
   override def deterministic: Boolean = true
 
@@ -265,7 +265,7 @@ data = {
     val time_diff_type = row.getAs[String](2)
     val time_diff: Int = -1
 
-    val result: Map[String, Double] = dimen_mode match {
+    val result: Map[String, String] = dimen_mode match {
       case "y" =>
         time_diff_type match {
           case "0" =>
@@ -292,8 +292,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
           case _ => throw new RuntimeException("dimen_mode y must match time_diff_type[0]")
@@ -321,12 +324,13 @@ data = {
             })
 
             val result_dog = dog.map(m => {
-
               var m3 = dog2.getOrElse(m._1, 0.00)
-              if (m3 != 0.00) {
+              if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
             })
             result_dog
 
@@ -353,8 +357,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -391,8 +398,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -424,8 +434,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -457,8 +470,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -487,8 +503,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -519,8 +538,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -547,8 +569,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -577,8 +602,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
           case "0" =>
@@ -606,8 +634,11 @@ data = {
               var m3 = dog2.getOrElse(m._1, 0.00)
               if (m3 != 0.0) {
                 m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
               }
-              m._1 -> m3
+
             })
             result_dog
 
@@ -630,7 +661,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77700
+sid = 77731
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),

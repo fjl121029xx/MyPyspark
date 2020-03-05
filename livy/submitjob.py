@@ -18,7 +18,7 @@ select  compare_sum_rate(ARRAY(CONCAT(SUBSTR(col_1,1,4),'-', SUBSTR(col_1,6,2),'
     ,
     'kind': "sql"
 }
-sid = 77700
+sid = 77731
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
@@ -33,4 +33,5 @@ print(statements)
 stmt = statements['state']
 print('getStatements %s' % (statements['state']))
 if 'available' == stmt:
-    print(statements['output']['data']['application/json']['data'][0])
+    print(statements)
+    # print(statements['output']['data']['application/json']['data'][0])
