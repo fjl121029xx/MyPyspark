@@ -84,7 +84,7 @@ sessionConf = {}
 type = 0
 if type == 0:
     sessionConf = read_dohkosessionConf
-    sessionConf["name"] = 'YQS_Read_App'
+    sessionConf["name"] = 'UDF_TEST'
 else:   
     sessionConf = write_productsession
     # sessionConf["name"] = 'CESHIAO'

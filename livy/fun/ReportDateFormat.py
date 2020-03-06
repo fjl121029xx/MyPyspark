@@ -22,21 +22,24 @@ data = {
     import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
     import org.apache.spark.sql.types.{DataType, DataTypes, StructType} 
     
+    import java.sql.Timestamp
+    
     import org.apache.spark.sql.api.java.UDF2
     
-     spark.udf.register("report_date_format", new UDF2[String, String, String]() {
+     spark.udf.register("report_date_format", new UDF2[Timestamp, String, String]() {
         //  yyyy-MM-dd HH:mm:ss
       @throws[Exception]
-  override def call(reportdate: String, format: String): String = {
+  override def call(reportdate: Timestamp, format: String): String = {
 
     val ca = Calendar.getInstance()
-    ca.set(reportdate.substring(0, 4).toInt,
-      reportdate.substring(5, 7).toInt - 1,
-      reportdate.substring(8, 10).toInt,
-      reportdate.substring(11, 13).toInt,
-      reportdate.substring(14, 16).toInt,
-      reportdate.substring(17, 19).toInt
-    )
+    ca.setTime(reportdate)
+    //    ca.set(reportdate.substring(0, 4).toInt,
+    //      reportdate.substring(5, 7).toInt - 1,
+    //      reportdate.substring(8, 10).toInt,
+    //      reportdate.substring(11, 13).toInt,
+    //      reportdate.substring(14, 16).toInt,
+    //      reportdate.substring(17, 19).toInt
+    //    )
 
     format match {
       case "y" => ca.get(Calendar.YEAR).toString + "年"
@@ -89,7 +92,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77731
+sid = 77760
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
