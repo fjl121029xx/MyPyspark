@@ -14,12 +14,12 @@ headers = {
 # select compare_sum(Array(report_date),food_price_amount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`
 data = {
     'code': """
-    select report_date_format(col_1 ,'ym') as col_1 from `db_yqs_p_505`.`tbl_p_79466_1577179724`
-"""
+select row_number() over(order by split(key,'_')[0] ) as `key`, split(key,'_')[0] AS `report_date`, split(key,'_')[1] AS `__brand_id__`, split(key,'_')[2] AS `is_setfood`,cast(value as DECIMAL(15,2)) as `food_realamount` from (select compare_sum(ARRAY(report_date,__brand_id__,is_setfood),food_realamount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`) t LATERAL VIEW explode(t.m) tt as key ,value order by report_date desc
+   """
     ,
     'kind': "sql"
 }
-sid = 77760
+sid = 77903
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
@@ -34,5 +34,5 @@ print(statements)
 stmt = statements['state']
 print('getStatements %s' % (statements['state']))
 if 'available' == stmt:
-    # print(statements)
-    print(statements['output']['data']['application/json']['data'][0])
+    print(statements)
+    # print(statements['output']['data']['application/json']['data'][0])

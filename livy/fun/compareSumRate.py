@@ -138,7 +138,7 @@ data = {
 
   // 判断是否存在reportdate
   def hasRD(input: String): Boolean = {
-    val s = "\\d+-\\d+-\\d+"
+    val s = "\\\\d+-\\\\d+-\\\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     var arr: Array[String] = Array()
@@ -213,7 +213,7 @@ data = {
 
   def getNumFromMatch(input: String): Array[String] = {
 
-    val s = "\\d+"
+    val s = "\\\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     val arr: Array[String] = Array()
@@ -660,7 +660,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77731
+sid = 77903
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
