@@ -30,8 +30,8 @@ read_productsession = {"jars": ["hdfs://cluster/yqs/tools/engine-0.0.1-SNAPSHOT.
                        "driverMemory": '11g',
                        "driverCores": 1,
                        "executorMemory": '11g',
-                       "executorCores": 6,
-                       "numExecutors": 17,
+                       "executorCores": 3,
+                       "numExecutors": 8,
                        "queue": "default",
                        "heartbeatTimeoutInSecond": 86400,
                        "proxyUser": None,
@@ -83,9 +83,9 @@ write_productsession = {
 sessionConf = {}
 type = 0
 if type == 0:
-    sessionConf = read_dohkosessionConf
-    sessionConf["name"] = 'UDF_TEST'
-else:   
+    sessionConf = read_productsession
+    sessionConf["name"] = 'TestReadSession  '
+else:
     sessionConf = write_productsession
     # sessionConf["name"] = 'CESHIAO'
     sessionConf["name"] = 'YQS_Write_App'
@@ -93,9 +93,9 @@ else:
 headers = {'X-Requested-By': 'livy'}
 try:
     # print(sessionConf)
-    response = requests.post('http://172.20.44.6:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
+    # response = requests.post('http://172.20.44.6:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
     # response = requests.post('http://172.26.25.148:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
-    # response = requests.post('http://192.168.101.39:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
+    response = requests.post('http://192.168.101.39:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
     print('createSession %s' % (response.text))
 except Exception as e:
     print('createSession error: %s' % (repr(e)))
