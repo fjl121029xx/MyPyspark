@@ -105,7 +105,39 @@ data = {
 
   def dayformat(day: String, dimen_mode: String): String = {
     val ca = Calendar.getInstance()
-    ca.set(day.substring(0, 4).toInt, day.substring(4, 6).toInt - 1, day.substring(6, 8).toInt)
+    if (day.contains("-")) {
+      ca.set(day.substring(0, 4).toInt, day.substring(5, 7).toInt - 1, day.substring(8, 10).toInt)
+    } else {
+      if (day.contains("年")) {
+        // 年
+        ca.set(day.substring(0, 4).toInt, 0, 1)
+      } else if (day.contains("年") && day.contains("月") && day.contains("日")) {
+        // 年月日
+        ca.set(day.substring(0, 4).toInt, day.substring(day.indexOf("年") + 1, day.indexOf("月")).toInt - 1,
+          day.substring(day.indexOf("月") + 1, day.indexOf("日")).toInt)
+      } else if (day.contains("年") && day.contains("月")) {
+        // 年月
+        ca.set(day.substring(0, 4).toInt, day.substring(day.indexOf("年") + 1, day.indexOf("月")).toInt - 1, 1)
+      } else if (day.contains("年") && day.contains("周")) {
+        // 年周
+        ca.setFirstDayOfWeek(Calendar.MONDAY)
+        ca.set(Calendar.YEAR, day.substring(0, 4).toInt)
+        ca.set(Calendar.WEEK_OF_YEAR, day.substring(day.indexOf("年") + 1, day.indexOf("周")).toInt)
+      } else if (day.contains("年") && day.contains("季度")) {
+        // 年季度
+        val m = day.substring(day.indexOf("年") + 1, day.indexOf("季度")).toInt match {
+          case 1 => 1
+          case 2 => 4
+          case 3 => 7
+          case _ => 10
+        }
+        ca.set(day.substring(0, 4).toInt, m - 1, 1)
+      } else {
+        ca.set(day.substring(0, 4).toInt, day.substring(4, 6).toInt - 1, day.substring(6, 8).toInt)
+      }
+
+    }
+
     dimen_mode match {
       case "y" => ca.get(Calendar.YEAR).toString + "年"
       case "yq" =>
@@ -138,7 +170,7 @@ data = {
 
   // 判断是否存在reportdate
   def hasRD(input: String): Boolean = {
-    val s = "\\\\d+-\\\\d+-\\\\d+"
+    val s = "\\d+-\\d+-\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     var arr: Array[String] = Array()
@@ -156,23 +188,17 @@ data = {
 
     //
     var cat = buffer.getAs[Map[String, Double]](0)
+    val dimen_mode = input.getAs[String](2)
 
-    val dimensions = input.getAs[Seq[AnyRef]](0)
-    val rd = dimensions.filter(f => hasRD(f.toString))(0).toString
+    val dimensions = input.getAs[Seq[String]](0)
 
-    val dimensions_othr = dimensions.filter(f => !hasRD(f.toString))
-    val reportdate = rd.split(" ")(0).replaceAll("-", "").toInt
-    val date2dimen = dayformat(reportdate.toString, input.getAs[String](2))
-    // 聚合key
-    val aggr_key = generateKey(date2dimen, dimensions_othr)
+    val report_date = dimensions.filter(hasRD(_)).map(dayformat(_, dimen_mode))
+    val other = dimensions.filter(f => !hasRD(f.toString))
+
+    val aggr_key = report_date.mkString("_") + "_" + other.mkString("_")
 
     val min_reportdate = buffer.getAs[Int](3)
     val max_reportdate = buffer.getAs[Int](4)
-    if (reportdate < min_reportdate)
-      buffer.update(3, reportdate)
-    if (reportdate > max_reportdate)
-      buffer.update(4, reportdate)
-
 
     var measure = input.getAs[Double](1)
 
@@ -213,7 +239,7 @@ data = {
 
   def getNumFromMatch(input: String): Array[String] = {
 
-    val s = "\\\\d+"
+    val s = "\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     val arr: Array[String] = Array()
@@ -376,7 +402,7 @@ data = {
 
               val ca = Calendar.getInstance()
 
-              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt  match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -412,7 +438,7 @@ data = {
               val rd = k(0)
               val ca = Calendar.getInstance()
 
-              val m =rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt  match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -521,7 +547,8 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1,
+                rd.substring(rd.indexOf("月") + 1, rd.indexOf("日")).toInt)
               ca.add(Calendar.YEAR, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -552,7 +579,8 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1,
+                rd.substring(rd.indexOf("月") + 1, rd.indexOf("日")).toInt)
               ca.add(Calendar.MONTH, time_diff)
               val day = getTime(ca)
               k(0) = dayformat(day, dimen_mode)
@@ -584,7 +612,8 @@ data = {
 
               val ca = Calendar.getInstance()
               ca.setFirstDayOfWeek(Calendar.MONDAY)
-              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1,
+                rd.substring(rd.indexOf("月") + 1, rd.indexOf("日")).toInt)
               ca.add(Calendar.WEEK_OF_YEAR, time_diff)
 
               val day = getTime(ca)
@@ -614,7 +643,8 @@ data = {
               val k_1 = k.mkString("_")
               val rd = k(0)
               val ca = Calendar.getInstance()
-              ca.set(rd.substring(0, 4).toInt, rd.substring(5, 7).toInt - 1, rd.substring(8, 10).toInt)
+              ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1,
+                rd.substring(rd.indexOf("月") + 1, rd.indexOf("日")).toInt)
               ca.add(Calendar.DAY_OF_YEAR, time_diff)
               val day = getTime(ca)
 
