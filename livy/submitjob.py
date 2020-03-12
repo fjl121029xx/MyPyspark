@@ -14,12 +14,12 @@ headers = {
 # select compare_sum(Array(report_date),food_price_amount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`
 data = {
     'code': """
-    SELECT sum(food_price_amount) AS `food_price_amount_1575363366863`,sum(food_realamount) AS `food_realamount_1575363371704`,sum(food_number) AS `food_number_1575365579023`,sum(food_cancel_number) AS `food_cancel_number_1575365599010`,sum(order_status) AS `order_status_1575365623819`,report_date_format( cast(report_date as string),'ymd') AS `report_date_1575363272057`,shop_name AS `shop_name_1575363281347` FROM `db_yqs_b_505`.`tbl_pos_bill_food` WHERE (((shop_name IN (  '测试-李源'  ,  '测试-南唐一'  ,  '测试-唐唐'  ,  '测试-李彦龙123'  ) ) OR (shop_name IN (  '测试-李煜'  ,  '测试门店宝-saas'  ) ))) GROUP BY report_date_1575363272057,shop_name_1575363281347 ORDER BY `report_date_1575363272057` asc,`food_price_amount_1575363366863` ASC LIMIT 1000
+    SELECT COUNT (DISTINCT shop_name) AS `shop_name_1584011785433`,setfood_name AS `setfood_name_1584010114632`,report_date_format( cast(report_date as string),'ymd') AS `report_date_1583809351215`,__brand_id__ AS `__brand_id___1583834174151` FROM `db_yqs_b_505`.`tbl_pos_bill_food` GROUP BY `setfood_name_1584010114632`,report_date_1583809351215,__brand_id___1583834174151
    """
     ,
     'kind': "sql"
 }
-sid = 77979
+sid = 77984
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
