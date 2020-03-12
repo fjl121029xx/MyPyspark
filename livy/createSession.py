@@ -83,8 +83,8 @@ write_productsession = {
 sessionConf = {}
 type = 0
 if type == 0:
-    sessionConf = read_productsession
-    sessionConf["name"] = 'TestReadSession  '
+    sessionConf = read_dohkosessionConf
+    sessionConf["name"] = 'UDFSESSIN  '
 else:
     sessionConf = write_productsession
     # sessionConf["name"] = 'CESHIAO'
@@ -93,9 +93,10 @@ else:
 headers = {'X-Requested-By': 'livy'}
 try:
     # print(sessionConf)
-    # response = requests.post('http://172.20.44.6:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
+    response = requests.post('http://172.20.44.6:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
     # response = requests.post('http://172.26.25.148:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
-    response = requests.post('http://192.168.101.39:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
-    print('createSession %s' % (response.text))
+    # response = requests.post('http://192.168.101.39:8999/sessions/', data=json.dumps(sessionConf), headers=headers)
+    id = response.json()['id']
+    print('createSession id %s' % (id))
 except Exception as e:
     print('createSession error: %s' % (repr(e)))
