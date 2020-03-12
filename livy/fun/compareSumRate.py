@@ -700,7 +700,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77975
+sid = 77984
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),

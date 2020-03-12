@@ -13,7 +13,6 @@ headers = {
 }
 data = {
     'code': """
-    
     import java.text.SimpleDateFormat
     import java.util
     import java.util.Calendar
@@ -21,37 +20,9 @@ data = {
     
     import org.apache.spark.sql.Row
     import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
-    import org.apache.spark.sql.types.{DataType, DataTypes, StructType}
-    
-    spark.udf.register("compare_sum", new UserDefinedAggregateFunction() {
-
-      def getTime(date: String, date_type: String, count: Int): String = {
-    val ca = Calendar.getInstance()
-    ca.set(date.substring(0, 4).toInt,
-      date.substring(4, 6).toInt - 1,
-      date.substring(6, 8).toInt)
-    date_type match {
-      case "year" => ca.add(Calendar.YEAR, count)
-      case "month" => ca.add(Calendar.MONTH, count)
-      case "week" => ca.add(Calendar.WEEK_OF_YEAR, count)
-      case "day" => ca.add(Calendar.DAY_OF_YEAR, count)
-      case "hour" => ca.add(Calendar.HOUR_OF_DAY, count)
-      case _ => throw new Exception
-    }
-
-    var m = (ca.get(Calendar.MONTH)).toString
-    var d = ca.get(Calendar.DAY_OF_MONTH).toString
-    if (m.length < 2) {
-      m = "0" + m
-    }
-    if (d.length < 2) {
-      d = "0" + d
-    }
-
-    ca.get(Calendar.YEAR) + "" + m + "" + d
-  }
-
-  def getTime(ca: Calendar): String = {
+    import org.apache.spark.sql.types.{DataType, DataTypes, StructType} 
+    spark.udf.register("compare_rate", new UserDefinedAggregateFunction() {
+    def getTime(ca: Calendar): String = {
     var m = (ca.get(Calendar.MONTH) + 1).toString
     var d = ca.get(Calendar.DAY_OF_MONTH).toString
     if (m.length < 2) {
@@ -67,22 +38,21 @@ data = {
   override def inputSchema: StructType =
     DataTypes.createStructType(util.Arrays.asList(
       DataTypes.createStructField("dimension", DataTypes.createArrayType(DataTypes.StringType), true),
-      DataTypes.createStructField("measure", DataTypes.DoubleType, true),
+      DataTypes.createStructField("measure", DataTypes.StringType, true),
       DataTypes.createStructField("dimen_mode", DataTypes.StringType, true),
-      DataTypes.createStructField("time_diff_type", DataTypes.StringType, true)
+      DataTypes.createStructField("time_diff_type", DataTypes.StringType, true),
+      DataTypes.createStructField("measure_name", DataTypes.StringType, true)
     ))
 
   override def bufferSchema: StructType =
     DataTypes.createStructType(util.Arrays.asList(
       DataTypes.createStructField(
         "mid_result",
-        DataTypes.createMapType(DataTypes.StringType, DataTypes.DoubleType, true),
+        DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType, true),
         true),
       DataTypes.createStructField("dimen_mode", DataTypes.StringType, true),
       DataTypes.createStructField("time_diff_type", DataTypes.StringType, true),
-
-      DataTypes.createStructField("min_reportdate", DataTypes.IntegerType, true),
-      DataTypes.createStructField("max_reportdate", DataTypes.IntegerType, true)
+      DataTypes.createStructField("measure_name", DataTypes.StringType, true)
     )
     )
 
@@ -96,13 +66,7 @@ data = {
     buffer.update(0, Map())
     buffer.update(1, "yearmonthday")
     buffer.update(2, "month")
-
-    val format = new SimpleDateFormat("yyyyMMdd");
-    val time = format.format(Calendar.getInstance().getTime()).toInt
-    // ↓补全日期
-    buffer.update(3, time)
-    buffer.update(4, time)
-
+    buffer.update(3, "sum")
   }
 
   def dayformat(day: String, dimen_mode: String): String = {
@@ -172,7 +136,7 @@ data = {
 
   // 判断是否存在reportdate
   def hasRD(input: String): Boolean = {
-    val s = "\\\\d+-\\\\d+-\\\\d+ \\\\d+:\\\\d+:\\\\d+"
+    val s = "\\\\d+-\\\\d+-\\\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     var arr: Array[String] = Array()
@@ -186,18 +150,14 @@ data = {
     ma.find()
   }
 
-  def generateKey(rd: String, s: Seq[AnyRef]): String = {
-    var buffer = rd
-    s.foreach(f => buffer += ("_" + f))
-
-    buffer
-  }
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
 
-    val dimen_mode = input.getAs[String](2)
     //
-    var cat = buffer.getAs[Map[String, Double]](0)
+    var cat = buffer.getAs[Map[String, String]](0)
+    val dimen_mode = input.getAs[String](2)
+    val measure_name = input.getAs[String](4)
+    buffer.update(3, measure_name)
 
     val dimensions = input.getAs[Seq[String]](0)
 
@@ -210,11 +170,58 @@ data = {
     }).mkString("_")
 
 
-    var measure = input.getAs[Double](1)
+    var measure = input.getAs[String](1)
 
-    val i = cat.getOrElse(aggr_key, 0.00)
-    measure = i + measure
-    cat += (aggr_key -> measure)
+    measure_name match {
+
+      case "count" => {
+        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+
+        measure = (i + 1).toString
+        cat += (aggr_key -> measure)
+      }
+      case "sum" => {
+        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+        measure = (i + measure.toDouble).toString
+        cat += (aggr_key -> measure)
+      }
+      case "max" => {
+        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+        if (measure.toDouble < i) {
+          measure = i.toString
+        }
+        cat += (aggr_key -> measure.toString)
+
+      }
+      case "min" => {
+        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+        if (measure.toDouble > i) {
+          measure = i.toString
+        }
+        cat += (aggr_key -> measure.toString)
+      }
+      case "avg" => {
+        val cat_v = cat.getOrElse(aggr_key, "0,0")
+        var a = cat_v.split(",")(0).toDouble
+        val b = cat_v.split(",")(1).toDouble + 1.0
+        a = a + measure.toDouble
+        cat += (aggr_key -> (a + "," + b))
+      }
+      case "discount" => {
+        var cat_v = cat.getOrElse(aggr_key, "")
+        if (cat_v.eq("")) {
+          cat_v = measure
+        } else if (!cat_v.contains(measure)) {
+          cat_v = cat_v + "," + measure
+        }
+        cat += (aggr_key -> cat_v)
+      }
+      case _ => {
+        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+        measure = i + measure
+        cat += (aggr_key -> measure.toString)
+      }
+    }
 
     buffer.update(0, cat)
     // dimen_mode
@@ -225,25 +232,70 @@ data = {
 
   override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
 
-    val cat1 = buffer1.getAs[Map[String, Double]](0)
-    val cat2 = buffer2.getAs[Map[String, Double]](0)
+    val cat1 = buffer1.getAs[Map[String, String]](0)
+    val cat2 = buffer2.getAs[Map[String, String]](0)
 
-    val dog1 = cat1 ++ cat2.map(t => t._1 -> (t._2 + cat1.getOrElse(t._1, 0.00)))
+    val measure_name = buffer2.getString(3)
+    buffer1.update(3, measure_name)
+
+    val dog1 = cat1 ++ cat2.map(t => {
+      var a = t._2
+      var b = cat1.getOrElse(t._1, "")
+
+      measure_name match {
+
+        case "count" => {
+          if (b.equals("")) b = "0.00"
+          a = (a.toDouble + b.toDouble).toString
+        }
+        case "sum" => {
+          if (b.equals("")) b = "0.00"
+          a = (a.toDouble + b.toDouble).toString
+        }
+        case "max" => {
+          if (b.equals("")) b = "0.00"
+          if (b.toDouble > a.toDouble) {
+            a = b.toString
+          }
+        }
+        case "min" => {
+          if (b.equals("")) b = "0.00"
+          if (b.toDouble < a.toDouble) {
+            a = b.toString
+          }
+        }
+        case "avg" => {
+          val a1 = a.split(",")(0)
+          val a2 = a.split(",")(1)
+          var b1 = "0.00"
+          var b2 = "0.00"
+          if (!b.equals("")) {
+            b1 = b.split(",")(0)
+            b2 = b.split(",")(1)
+          }
+          a = (a1.toDouble + b1.toDouble) + "," + (a2.toDouble + b2.toDouble)
+        }
+        case "discount" => {
+          val b1 = b.split(",")
+          b1.foreach(str => {
+            if (a.eq("")) {
+              a = str
+            } else if (!a.contains(str)) {
+              a = a + "," + str
+            }
+          })
+        }
+        case _ => {
+          if (b.equals("")) b = "0.00"
+          a = (a.toDouble + b.toDouble).toString
+        }
+      }
+      t._1 -> a
+    })
     buffer1.update(0, dog1)
 
     buffer1.update(1, buffer2.getAs[String](1))
     buffer1.update(2, buffer2.getAs[String](2))
-
-    //
-    val min_reportdate1 = buffer1.getAs[Int](3)
-    val min_reportdate2 = buffer2.getAs[Int](3)
-    if (min_reportdate2 < min_reportdate1)
-      buffer1.update(3, min_reportdate2)
-
-    val max_reportdate1 = buffer1.getAs[Int](4)
-    val max_reportdate2 = buffer2.getAs[Int](4)
-    if (max_reportdate2 < max_reportdate1)
-      buffer1.update(4, max_reportdate2)
 
   }
 
@@ -261,35 +313,26 @@ data = {
     arr
   }
 
-  def creatbasiresult(a: Int, b: Int, dimen_mode: String): Map[String, Double] = {
-
-    var basic_map = Map[String, Double]()
-    var flag = true
-    var tmp_a = a
-    while (flag) {
-      val ca = Calendar.getInstance()
-      ca.set(tmp_a.toString.substring(0, 4).toInt, tmp_a.toString.substring(4, 6).toInt - 1, tmp_a.toString.substring(6, 8).toInt)
-
-      ca.add(Calendar.DAY_OF_YEAR, 1)
-      var m = (ca.get(Calendar.MONTH) + 1).toString
-      var d = ca.get(Calendar.DAY_OF_MONTH).toString
-      if (m.length < 2) m = "0" + (m.toInt)
-      if (d.length < 2) d = "0" + d
-
-      val rd = (ca.get(Calendar.YEAR) + "" + m + "" + d).toInt
-      tmp_a = rd
-      basic_map += (dayformat(rd.toString, dimen_mode) -> 0.00)
-      if (tmp_a > b) {
-        flag = false
-      }
-    }
-    basic_map
-  }
 
   override def evaluate(row: Row): Any = {
 
-    val dog = row.getAs[Map[String, Double]](0)
-      .map(f => (f._1 -> f._2))
+    var dog = Map[String, Double]()
+    val measure_name = row.getString(3)
+
+    val r1 = row.getAs[Map[String, String]](0)
+    if (measure_name.equals("discount")) {
+      dog = r1.map(f => {
+        f._1 -> f._2.split(",").length.toDouble
+      })
+    } else if (measure_name.equals("avg")) {
+      dog = r1.map(f => {
+
+        val tmp = f._2.split(",")
+        f._1 -> tmp(0).toDouble / tmp(1).toDouble
+      })
+    } else {
+      dog = r1.map(f => (f._1 -> f._2.toDouble))
+    }
 
     println("--")
     dog.foreach(f => {
@@ -324,8 +367,17 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
 
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
           case _ => throw new RuntimeException("dimen_mode y must match time_diff_type[0]")
         }
       case "ym" =>
@@ -350,8 +402,16 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
 
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+            })
+            result_dog
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -360,7 +420,6 @@ data = {
               val rd = k(0)
 
               val ca = Calendar.getInstance()
-
               ca.set(rd.substring(0, 4).toInt, rd.substring(rd.indexOf("年") + 1, rd.indexOf("月")).toInt - 1, 1)
               ca.add(Calendar.MONTH, time_diff)
               val day = getTime(ca)
@@ -372,8 +431,17 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case _ => throw new RuntimeException("dimen_mode ym must match time_diff_type[0,1]")
         }
@@ -387,7 +455,7 @@ data = {
 
               val ca = Calendar.getInstance()
 
-              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季度")).toInt match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -404,8 +472,17 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -414,7 +491,7 @@ data = {
               val rd = k(0)
               val ca = Calendar.getInstance()
 
-              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季度")).toInt match {
+              val m = rd.substring(rd.indexOf("年") + 1, rd.indexOf("季")).toInt match {
                 case 1 => 1
                 case 2 => 4
                 case 3 => 7
@@ -431,8 +508,17 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case _ => throw new RuntimeException("dimen_mode yq must match time_diff_type[0,1]")
         }
@@ -458,8 +544,17 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -482,8 +577,17 @@ data = {
               )
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case _ => throw new RuntimeException("dimen_mode yw must match time_diff_type[0,1]")
         }
@@ -509,8 +613,17 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case "2" =>
             val dog2 = dog.map(f => {
@@ -532,8 +645,17 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
+            })
+            result_dog
 
           case "1" =>
             val dog2 = dog.map(f => {
@@ -557,9 +679,17 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
-            val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog.map(en => en._1 -> en._2.toString)
+            val result_dog = dog.map(m => {
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
 
+            })
+            result_dog
           case "0" =>
             val dog2 = dog.map(f => {
               val k = f._1.split("_")
@@ -580,10 +710,20 @@ data = {
 
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
+
+
             val result_dog = dog.map(m => {
-              m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00))
+              var m3 = dog2.getOrElse(m._1, 0.00)
+              if (m3 != 0.0) {
+                m3 = (m._2 - dog2.getOrElse(m._1, 0.00)) / dog2.getOrElse(m._1, 0.00)
+                m._1 -> m3.toString
+              } else {
+                m._1 -> "-"
+              }
+
             })
-            result_dog.map(en => en._1 -> en._2.toString)
+            result_dog
+
 
           case _ => throw new RuntimeException(
             "dimen_mode ymd must match time_diff_type[0,1,2,3]")
@@ -603,7 +743,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77983
+sid = 77975
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),

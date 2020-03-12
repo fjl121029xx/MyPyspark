@@ -14,7 +14,7 @@ headers = {
 # select compare_sum(Array(report_date),food_price_amount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`
 data = {
     'code': """
-    select report_date_format(cast (col_1 as string),'ymd') as col_1 from `db_yqs_p_505`.`tbl_p_79466_1577179724`
+    SELECT sum(food_price_amount) AS `food_price_amount_1575363366863`,sum(food_realamount) AS `food_realamount_1575363371704`,sum(food_number) AS `food_number_1575365579023`,sum(food_cancel_number) AS `food_cancel_number_1575365599010`,sum(order_status) AS `order_status_1575365623819`,report_date_format( cast(report_date as string),'ymd') AS `report_date_1575363272057`,shop_name AS `shop_name_1575363281347` FROM `db_yqs_b_505`.`tbl_pos_bill_food` WHERE (((shop_name IN (  '测试-李源'  ,  '测试-南唐一'  ,  '测试-唐唐'  ,  '测试-李彦龙123'  ) ) OR (shop_name IN (  '测试-李煜'  ,  '测试门店宝-saas'  ) ))) GROUP BY report_date_1575363272057,shop_name_1575363281347 ORDER BY `report_date_1575363272057` asc,`food_price_amount_1575363366863` ASC LIMIT 1000
    """
     ,
     'kind': "sql"
