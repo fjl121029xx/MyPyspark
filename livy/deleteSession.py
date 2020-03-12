@@ -9,6 +9,6 @@ headers = {'X-Requested-By': 'livy'}
 # curl -X DELETE -H "Content-Type: application/json" -H "X-Requested-By: user" http://172.20.44.6:8999/sessions//77447
 # 192.168.101.39
 # res = requests.delete("http://172.26.25.148:8999/sessions/13", headers=headers)
-# res = requests.delete("http://172.20.44.6:8999/sessions/77730", headers=headers)
-res = requests.delete("http://bi-olap1.sm02:8999/sessions/9225", headers=headers)
+res = requests.delete("http://172.20.44.6:8999/sessions/77974", headers=headers)
+# res = requests.delete("http://bi-olap1.sm02:8999/sessions/9225", headers=headers)
 print(res.text)

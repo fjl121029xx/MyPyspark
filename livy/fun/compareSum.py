@@ -88,7 +88,7 @@ data = {
 
   override def dataType: DataType =
   //        DataTypes.createMapType(DataTypes.createArrayType(DataTypes.StringType), DataTypes.DoubleType)
-    DataTypes.createMapType(DataTypes.StringType, DataTypes.DoubleType)
+    DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType)
 
   override def deterministic: Boolean = true
 
@@ -172,10 +172,17 @@ data = {
 
   // 判断是否存在reportdate
   def hasRD(input: String): Boolean = {
-    val s = "\\d+-\\d+-\\d+ \\d+:\\d+:\\d+"
+    val s = "\\\\d+-\\\\d+-\\\\d+ \\\\d+:\\\\d+:\\\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     var arr: Array[String] = Array()
+    ma.find()
+  }
+
+  def hasRD2(input: String): Boolean = {
+    val s = "\\\\d+-\\\\d+-\\\\d+"
+    val pattern = Pattern.compile(s)
+    val ma = pattern.matcher(input)
     ma.find()
   }
 
@@ -193,10 +200,15 @@ data = {
     var cat = buffer.getAs[Map[String, Double]](0)
 
     val dimensions = input.getAs[Seq[String]](0)
-    val report_date = dimensions.filter(hasRD(_)).map(dayformat(_, dimen_mode))
-    val other = dimensions.filter(f => !hasRD(f.toString))
 
-    val aggr_key = report_date.mkString("_") + "_" + other.mkString("_")
+    val aggr_key = dimensions.map(l => {
+      if (hasRD2(l) || hasRD(l)) {
+        dayformat(l, dimen_mode)
+      } else {
+        l
+      }
+    }).mkString("_")
+
 
     var measure = input.getAs[Double](1)
 
@@ -237,7 +249,7 @@ data = {
 
   def getNumFromMatch(input: String): Array[String] = {
 
-    val s = "\\d+"
+    val s = "\\\\d+"
     val pattern = Pattern.compile(s)
     val ma = pattern.matcher(input)
     val arr: Array[String] = Array()
@@ -289,7 +301,7 @@ data = {
     val time_diff_type = row.getAs[String](2)
     val time_diff: Int = -1
 
-    val result: Map[String, Double] = dimen_mode match {
+    val result: Map[String, String] = dimen_mode match {
       case "y" =>
         time_diff_type match {
           case "0" =>
@@ -313,7 +325,7 @@ data = {
             })
 
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
           case _ => throw new RuntimeException("dimen_mode y must match time_diff_type[0]")
         }
       case "ym" =>
@@ -339,7 +351,7 @@ data = {
             })
 
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -361,7 +373,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case _ => throw new RuntimeException("dimen_mode ym must match time_diff_type[0,1]")
         }
@@ -393,7 +405,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -420,7 +432,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case _ => throw new RuntimeException("dimen_mode yq must match time_diff_type[0,1]")
         }
@@ -447,7 +459,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -471,7 +483,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case _ => throw new RuntimeException("dimen_mode yw must match time_diff_type[0,1]")
         }
@@ -498,7 +510,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "2" =>
             val dog2 = dog.map(f => {
@@ -521,7 +533,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "1" =>
             val dog2 = dog.map(f => {
@@ -546,7 +558,7 @@ data = {
               (k_1, dog.getOrElse(k.mkString("_"), 0.00))
             })
             val result_dog = dog.map(m => m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00)))
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case "0" =>
             val dog2 = dog.map(f => {
@@ -571,7 +583,7 @@ data = {
             val result_dog = dog.map(m => {
               m._1 -> (m._2 - dog2.getOrElse(m._1, 0.00))
             })
-            result_dog
+            result_dog.map(en => en._1 -> en._2.toString)
 
           case _ => throw new RuntimeException(
             "dimen_mode ymd must match time_diff_type[0,1,2,3]")
@@ -591,12 +603,11 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77903
+sid = 77972
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
 #                          headers=headers)
-print(response.text)
 id = response.json()['id']
 print(id)
 time.sleep(10)

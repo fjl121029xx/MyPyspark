@@ -14,13 +14,12 @@ headers = {
 # select compare_sum(Array(report_date),food_price_amount,'ymd','0') as m from `db_yqs_b_505`.`tbl_pos_bill_food`
 data = {
     'code': """
-    select split(tt.key,'△')[0] as  `report_date`, split(tt.key,'△')[1] as `shop_name`,tt.value from
-     ( select  row_col_stat(array(col_1),array(col_2),array(col_6),'col_6-sum','1') as m from `db_yqs_p_505`.`tbl_p_79466_1577179724`) t LATERAL VIEW explode(t.m) tt as key ,value  
+    select report_date_format( report_date,'ymd') from `db_yqs_b_505`.`tbl_pos_bill_food` limit 10
    """
     ,
     'kind': "sql"
 }
-sid = 77936
+sid = 77975
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
