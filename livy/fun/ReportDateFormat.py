@@ -33,7 +33,7 @@ data = {
 
     val ca = Calendar.getInstance()
 
-    if (reportdate.length > 11) {
+    if (reportdate.length == 19) {
       ca.set(reportdate.substring(0, 4).toInt,
         reportdate.substring(5, 7).toInt - 1,
         reportdate.substring(8, 10).toInt,
@@ -41,14 +41,17 @@ data = {
         reportdate.substring(14, 16).toInt,
         reportdate.substring(17, 19).toInt
       )
-    } else {
+    } else if (reportdate.length == 10) {
       ca.set(reportdate.substring(0, 4).toInt,
         reportdate.substring(5, 7).toInt - 1,
         reportdate.substring(8, 10).toInt
       )
+    } else {
+      ca.set(reportdate.substring(0, 4).toInt,
+        reportdate.substring(4, 6).toInt - 1,
+        reportdate.substring(6, 8).toInt
+      )
     }
-    //    ca.setTime(reportdate)
-
 
     format match {
       case "y" => ca.get(Calendar.YEAR).toString + "年"
@@ -101,11 +104,11 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 9242
-# response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
-#                          headers=headers)
-response = requests.post("http://192.168.101.39:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
+sid = 78007
+response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
+# response = requests.post("http://192.168.101.39:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
+#                          headers=headers)
 print(response.text)
 id = response.json()['id']
 print(id)

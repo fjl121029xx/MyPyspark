@@ -194,7 +194,7 @@ data = {
 
       }
       case "min" => {
-        val i = cat.getOrElse(aggr_key, "0.00").toDouble
+        val i = cat.getOrElse(aggr_key, "999999999.00").toDouble
         if (measure.toDouble > i) {
           measure = i.toString
         }
@@ -259,7 +259,7 @@ data = {
           }
         }
         case "min" => {
-          if (b.equals("")) b = "0.00"
+          if (b.equals("")) b = "999999999.00"
           if (b.toDouble < a.toDouble) {
             a = b.toString
           }
@@ -743,7 +743,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77975
+sid = 78007
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
