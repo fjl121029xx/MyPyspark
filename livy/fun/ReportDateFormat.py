@@ -101,16 +101,17 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 77984
-response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
-                         headers=headers)
-# response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
+sid = 9242
+# response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
 #                          headers=headers)
+response = requests.post("http://192.168.101.39:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
+                         headers=headers)
 print(response.text)
 id = response.json()['id']
 print(id)
 time.sleep(10)
-response = request.urlopen('http://172.20.44.6:8999/sessions/%d/statements/%d' % (sid, id))
+response = request.urlopen('http://192.168.101.39:8999/sessions/%d/statements/%d' % (sid, id))
+# response = request.urlopen('http://172.20.44.6:8999/sessions/%d/statements/%d' % (sid, id))
 statements = json.loads(response.read())
 print(statements)
 stmt = statements['state']
