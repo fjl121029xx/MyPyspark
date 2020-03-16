@@ -117,7 +117,14 @@ data = {
         } else {
           ca.get(Calendar.YEAR).toString + "年4季度"
         }
-      case "ym" => ca.get(Calendar.YEAR).toString + "年" + (ca.get(Calendar.MONTH) + 1) + "月"
+      case "ym" => {
+        var mint = (ca.get(Calendar.MONTH) + 1).toString
+        if (mint.length < 2) {
+          mint = "0" + mint
+        }
+
+        ca.get(Calendar.YEAR).toString + "年" + mint + "月"
+      }
       case "yw" => ca.get(Calendar.YEAR).toString + "年" + (ca.get(Calendar.WEEK_OF_YEAR)) + "周"
       case "ymd" =>
         var m = (ca.get(Calendar.MONTH) + 1).toString
@@ -743,7 +750,7 @@ data = {
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 78007
+sid = 78113
 response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
                          headers=headers)
 # response = requests.post("http://192.168.101.39:8999:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
