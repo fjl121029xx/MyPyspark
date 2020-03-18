@@ -108,23 +108,18 @@ data = {
     # ,
     # 'kind': "sql"
 }
+
+
 # 172.20.44.6
 # bi-olap1.sm02
 
-sid = 78113
-response = requests.post("http://172.20.44.6:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
-                         headers=headers)
-# response = requests.post("http://192.168.101.39:8999/sessions/" + str(sid) + '/statements', data=json.dumps(data),
-#                          headers=headers)
-print(response.text)
-id = response.json()['id']
-print(id)
-time.sleep(10)
-response = request.urlopen('http://192.168.101.39:8999/sessions/%d/statements/%d' % (sid, id))
-# response = request.urlopen('http://172.20.44.6:8999/sessions/%d/statements/%d' % (sid, id))
-statements = json.loads(response.read())
-print(statements)
-stmt = statements['state']
-print('getStatements %s' % (statements['state']))
-if 'available' == stmt:
-    print(111)
+def report_date_format(sid, url):
+    response = requests.post(url + str(sid) + '/statements', data=json.dumps(data),
+                             headers=headers)
+    id = response.json()['id']
+    time.sleep(10)
+    response = request.urlopen(url + '%d/statements/%d' % (sid, id))
+    statements = json.loads(response.read())
+    stmt = statements['state']
+    if 'available' == stmt:
+        print(statements)
