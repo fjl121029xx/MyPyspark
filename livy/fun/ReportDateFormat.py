@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+
 __author__ = 'fjl'
 
 import json
@@ -116,6 +117,7 @@ data = {
 def report_date_format(sid, url):
     response = requests.post(url + str(sid) + '/statements', data=json.dumps(data),
                              headers=headers)
+    # reg()
     id = response.json()['id']
     time.sleep(10)
     response = request.urlopen(url + '%d/statements/%d' % (sid, id))
