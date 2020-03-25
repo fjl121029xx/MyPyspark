@@ -25,6 +25,7 @@ def reg():
         report_date_format(i, url1)
         compare(i, url1)
         compare_rate(i, url1)
+        # row_col_stat(i, url1)
         # ***************************
         # report_date_format(sid2, url1)
         # compare(sid2, url1)

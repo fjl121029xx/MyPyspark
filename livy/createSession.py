@@ -11,10 +11,10 @@ read_dohkosessionConf = {
     "archives": [],
     "kind": 'spark',
     "driverMemory": '2g',
-    "driverCores": 1,
-    "executorMemory": '2g',
-    "executorCores": 2,
-    "numExecutors": 1,
+    "driverCores": 2,
+    "executorMemory": '4g',
+    "executorCores": 1,
+    "numExecutors": 2,
     "queue": 'default',
     "heartbeatTimeoutInSecond": 86400,
     "proxyUser": None,
@@ -84,7 +84,7 @@ sessionConf = {}
 type = 0
 if type == 0:
     sessionConf = read_dohkosessionConf
-    sessionConf["name"] = 'UDFSESSIN  '
+    sessionConf["name"] = 'UDFSESSIN'
 else:
     sessionConf = write_productsession
     # sessionConf["name"] = 'CESHIAO'
