@@ -26,7 +26,7 @@ data = {
     spark.udf.register("row_col_stat", new UserDefinedAggregateFunction() {
    
   
-    def getTime(ca: Calendar): String = {
+  def getTime(ca: Calendar): String = {
     var m = (ca.get(Calendar.MONTH) + 1).toString
     var d = ca.get(Calendar.DAY_OF_MONTH).toString
     if (m.length < 2) {
@@ -46,7 +46,8 @@ data = {
       DataTypes.createStructField("measure", DataTypes.createArrayType(DataTypes.StringType), true),
       DataTypes.createStructField("rowcol_num", DataTypes.StringType, true),
       DataTypes.createStructField("date_mode", DataTypes.StringType, true),
-      DataTypes.createStructField("measure_func", DataTypes.createArrayType(DataTypes.StringType), true)
+      DataTypes.createStructField("measure_func", DataTypes.createArrayType(DataTypes.StringType), true),
+      DataTypes.createStructField("rowsumtype", DataTypes.createArrayType(DataTypes.StringType), true)
     ))
 
   override def bufferSchema: StructType =
@@ -55,7 +56,7 @@ data = {
         "buffer_measure",
         DataTypes.createMapType(
           DataTypes.StringType,
-          DataTypes.createMapType(DataTypes.StringType, DataTypes.DoubleType, true),
+          DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType, true),
           true),
         true),
       DataTypes.createStructField("measure_func", DataTypes.StringType, true),
@@ -63,13 +64,14 @@ data = {
         "buffer_dimension",
         DataTypes.createMapType(
           DataTypes.StringType,
-          DataTypes.DoubleType,
+          DataTypes.StringType,
           true),
         true),
       DataTypes.createStructField("rowcol", DataTypes.StringType, true),
       DataTypes.createStructField("dimension_length", DataTypes.IntegerType, true),
       DataTypes.createStructField("compare_length", DataTypes.IntegerType, true),
-      DataTypes.createStructField("measure_length", DataTypes.IntegerType, true)
+      DataTypes.createStructField("measure_length", DataTypes.IntegerType, true),
+      DataTypes.createStructField("rowsumtype", DataTypes.StringType, true)
     )
     )
 
@@ -86,6 +88,7 @@ data = {
     buffer.update(4, 0)
     buffer.update(5, 0)
     buffer.update(6, 0)
+    buffer.update(7, "")
   }
 
   def dayformat(day: String, dimen_mode: String, format: Int): String = {
@@ -168,7 +171,7 @@ data = {
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
 
     // 行统计维度
-    var cat = buffer.getAs[Map[String, Map[String, Double]]](0)
+    var cat = buffer.getAs[Map[String, Map[String, String]]](0)
 
     // 时间格式化 ymd ...
     val dimen_mode = input.getAs[String](4)
@@ -198,49 +201,125 @@ data = {
     val measure_value = input.getAs[Seq[String]](2)
     buffer.update(6, measure_value.length)
 
+    val rowsumtype = input.getAs[Seq[String]](6)
+    buffer.update(7, rowsumtype.mkString("_"))
+
     // measure_name
     val measure_func = input.getAs[Seq[String]](5)
     buffer.update(1, measure_func.mkString(","))
     val measure = measure_func.zip(measure_value).toMap
 
+    //
+    //    val row_sum = input.getAs[Seq[String]](6)
+    //    buffer.update(7, row_sum.mkString("_"))
 
-    var subCat = cat.getOrElse(dimension_key, Map())
+    var subCat: Map[String, String] = cat.getOrElse(dimension_key, Map())
 
     // 列统计
     measure.foreach(mea => {
       val key = mea._1
-      val value = mea._2.toString.toDouble
+      val value = mea._2.toString
       val key_arr = key.split("-")
 
       val mea_key = compare_key + "△" + key
-      var v = subCat.getOrElse(mea_key, 0.00)
+
       key_arr(1) match {
-        case "sum" => v = v + value
-        case "count" => v = v + 1
-        case "max" =>
-          if (value > v) v = value
-        case "min" =>
-          if (value < v) v = value
-        case _ => throw new RuntimeException("sum")
+        case "sum" => {
+          var v = subCat.getOrElse(mea_key, "0.00").toDouble
+          v = (v + value.toDouble)
+          subCat += (mea_key -> v.toString)
+        }
+        case "count" => {
+          var v = subCat.getOrElse(mea_key, "0.00").toDouble
+          v = (v + 1)
+          subCat += (mea_key -> v.toString)
+        }
+        case "max" => {
+          var v = subCat.getOrElse(mea_key, "0.00").toDouble
+          if (value.toDouble > v) {
+            v = value.toDouble
+          }
+          subCat += (mea_key -> v.toString)
+        }
+        case "min" => {
+          var v = subCat.getOrElse(mea_key, "0.00").toDouble
+          if (value.toDouble < v) {
+            v = value.toDouble
+          }
+          subCat += (mea_key -> v.toString)
+        }
+        case "avg" => {
+          val v = subCat.getOrElse(mea_key, "0,0")
+          var a = v.split(",")(0).toDouble
+          val b = v.split(",")(1).toDouble + 1.0
+          a = a + value.toDouble
+          subCat += (mea_key -> ("%f,%f".format(a, b)))
+        }
+        case "discount" => {
+          var v = subCat.getOrElse(mea_key, "")
+          if (v.eq("")) {
+            v = value
+          } else if (!v.contains(value)) {
+            v = "%s,%s".format(v, value)
+          }
+          subCat += (mea_key -> v)
+
+        }
+        case _ => throw new RuntimeException("")
       }
-      subCat += (mea_key -> v)
+
     })
 
     cat += (dimension_key -> subCat)
     buffer.update(0, cat)
 
     // 行统计
-    var dog = buffer.getAs[Map[String, Double]](2)
+    var dog = buffer.getAs[Map[String, String]](2)
     measure.foreach(m => {
       val dimension_tmp_key = dimension_key + "△" + m._1
-      val m_value = m._2.toString.toDouble
-      var v = dog.getOrElse(dimension_tmp_key, 0.00)
+      val m_value = m._2.toString
+
       if (m._1.endsWith("sum")) {
-        v = v + m_value
+
+        var v = dog.getOrElse(dimension_tmp_key, "0.00").toDouble
+        v = v + m_value.toDouble
+        dog += (dimension_tmp_key -> v.toString)
       } else if (m._1.endsWith("count")) {
+
+        var v = dog.getOrElse(dimension_tmp_key, "0.00").toDouble
         v = v + 1
+        dog += (dimension_tmp_key -> v.toString)
+      } else if (m._1.endsWith("max")) {
+
+        var v = dog.getOrElse(dimension_tmp_key, "0.00").toDouble
+        if (m_value.toDouble > v) {
+          v = m_value.toDouble
+        }
+        dog += (dimension_tmp_key -> v.toString)
+      } else if (m._1.endsWith("min")) {
+
+        var v = dog.getOrElse(dimension_tmp_key, "0.00").toDouble
+        if (m_value.toDouble < v) {
+          v = m_value.toDouble
+        }
+        dog += (dimension_tmp_key -> v.toString)
+      } else if (m._1.endsWith("avg")) {
+
+        val v = dog.getOrElse(dimension_tmp_key, "0,0")
+        var a = v.split(",")(0).toDouble
+        val b = v.split(",")(1).toDouble + 1.0
+        a = a + m_value.toDouble
+        dog += (dimension_tmp_key -> "%f,%f".format(a, b))
+      } else if (m._1.endsWith("discount")) {
+        var v = dog.getOrElse(dimension_tmp_key, "")
+        if (v.eq("")) {
+          v = m_value
+        } else if (!v.contains(m_value)) {
+          v = v + "," + m_value
+        }
+        dog += (dimension_tmp_key -> v)
       }
-      dog += (dimension_tmp_key -> v)
+
     })
     buffer.update(2, dog)
 
@@ -255,27 +334,67 @@ data = {
     buffer1.update(5, buffer2.getInt(5))
     buffer1.update(6, buffer2.getInt(6))
 
+    println(buffer2.getString(7))
+    buffer1.update(7, buffer2.getString(7))
+
     val measure_name = buffer2.getAs[String](1)
     buffer1.update(1, measure_name)
 
     // 列维度
-    var cat1 = buffer1.getAs[Map[String, Map[String, Double]]](0)
-    val cat2 = buffer2.getAs[Map[String, Map[String, Double]]](0)
+    var cat1 = buffer1.getAs[Map[String, Map[String, String]]](0)
+    val cat2 = buffer2.getAs[Map[String, Map[String, String]]](0)
     val key = cat1.keySet ++ cat2.keySet
 
     key.foreach(k => {
       var cat11 = cat1.getOrElse(k, Map())
       val cat21 = cat2.getOrElse(k, Map())
 
-      val dkey = cat11.keySet ++ cat21.keySet
-      dkey.foreach(subk => {
+      val ckey = cat11.keySet ++ cat21.keySet
+      ckey.foreach(subk => {
         if (subk.contains("count")) {
 
-          val dvalue = cat11.getOrElse(subk, 0.00) + cat21.getOrElse(subk, 0.00)
-          cat11 += (subk -> dvalue)
+          val dvalue = cat11.getOrElse(subk, "0.00").toDouble + cat21.getOrElse(subk, "0.00").toDouble
+          cat11 += (subk -> dvalue.toString)
+        } else if (subk.contains("max")) {
+          var dvalue1 = cat11.getOrElse(subk, "0.00").toDouble
+          val dvalue2 = cat21.getOrElse(subk, "0.00").toDouble
+          if (dvalue2 > dvalue1) {
+            dvalue1 = dvalue2
+          }
+          cat11 += (subk -> dvalue1.toString)
+        } else if (subk.contains("min")) {
+
+          var dvalue1 = cat11.getOrElse(subk, "0.00").toDouble
+          val dvalue2 = cat21.getOrElse(subk, "0.00").toDouble
+          if (dvalue2 < dvalue1) {
+            dvalue1 = dvalue2
+          }
+          cat11 += (subk -> dvalue1.toString)
+        } else if (subk.contains("discount")) {
+          var dvalue1 = cat11.getOrElse(subk, "")
+          val dvalue2 = cat21.getOrElse(subk, "")
+
+          val dvalue2_arr = dvalue2.split(",")
+          dvalue2_arr.foreach(f => {
+            if (dvalue1.eq("")) {
+              dvalue1 = f
+            } else if (!dvalue1.contains(f)) {
+              dvalue1 = dvalue1 + "," + f
+            }
+          })
+        } else if (subk.contains("avg")) {
+          val dvalue1 = cat11.getOrElse(subk, "0,0")
+          val dvalue2 = cat21.getOrElse(subk, "0,0")
+
+          val a1 = dvalue1.split(",")(0).toDouble
+          val a2 = dvalue1.split(",")(1).toDouble
+
+          val b1 = dvalue2.split(",")(0).toDouble
+          val b2 = dvalue2.split(",")(1).toDouble
+          cat11 += (subk -> ((a1 + b1) / (a2 + b2)).toString)
         } else {
-          val dvalue = cat11.getOrElse(subk, 0.00) + cat21.getOrElse(subk, 0.00)
-          cat11 += (subk -> dvalue)
+          val dvalue = cat11.getOrElse(subk, "0.00").toDouble + cat21.getOrElse(subk, "0.00").toDouble
+          cat11 += (subk -> dvalue.toString)
         }
         cat1 += (k -> cat11)
       })
@@ -283,23 +402,106 @@ data = {
     buffer1.update(0, cat1)
 
 
-    val dog1 = buffer1.getAs[Map[String, Double]](2)
-    val dog2 = buffer2.getAs[Map[String, Double]](2)
+    var dog1 = buffer1.getAs[Map[String, String]](2)
+    val dog2 = buffer2.getAs[Map[String, String]](2)
 
-    val dog3 = dog1 ++ dog2.map(t => {
-      val key = t._1.toString
-      val value1 = t._2
-      val value2 = dog1.getOrElse(t._1, 0.00)
-      t._1.toString -> (t._2 + dog1.getOrElse(t._1, 0.00))
+    val dkey = dog1.keySet ++ dog2.keySet
+
+    dkey.foreach(key => {
+      if (key.contains("count")) {
+        val v1 = dog2.getOrElse(key, "0.00").toDouble
+        val v2 = dog1.getOrElse(key, "0.00").toDouble
+        val result = v1 + v2
+        dog1 += (key -> result.toString)
+      } else if (key.contains("max")) {
+        var v1 = dog2.getOrElse(key, "0.00").toDouble
+        val v2 = dog1.getOrElse(key, "0.00").toDouble
+
+        if (v2 > v1) {
+          v1 = v2
+        }
+        dog1 += (key -> v1.toString)
+      } else if (key.contains("min")) {
+        var v1 = dog2.getOrElse(key, "0.00").toDouble
+        val v2 = dog1.getOrElse(key, "0.00").toDouble
+
+        if (v2 < v1) {
+          v1 = v2
+        }
+        dog1 += (key -> v1.toString)
+      } else if (key.contains("discount")) {
+
+        val v1 = dog2.getOrElse(key, "")
+        var v2 = dog1.getOrElse(key, "")
+        if (v2.eq("")) {
+          v2 = v1
+        } else {
+          val vrr = v1.split(",")
+          vrr.foreach(f => {
+            if (!v2.contains(f)) {
+              v2 = v2 + "," + f
+            }
+          })
+        }
+        dog1 += (key -> v2.toString)
+
+      } else if (key.contains("avg")) {
+
+        val v1 = dog2.getOrElse(key, "0,0")
+        val v2 = dog1.getOrElse(key, "0,0")
+        val a1 = v1.split(",")(0).toDouble
+        val a2 = v1.split(",")(1).toDouble
+        val b1 = v2.split(",")(0).toDouble
+        val b2 = v2.split(",")(1).toDouble
+
+        dog1 += (key -> ((a1 + b1) / (a2 + b2)).toString)
+      } else {
+        val v1 = dog2.getOrElse(key, "0.00").toDouble
+        val v2 = dog1.getOrElse(key, "0.00").toDouble
+        val result = v1 + v2
+        dog1 += (key -> result.toString)
+      }
     })
-    buffer1.update(2, dog3)
+    buffer1.update(2, dog1)
   }
 
 
   override def evaluate(row: Row): Any = {
     // dimension_key + compare_key
-    val compare = row.getAs[Map[String, Map[String, Double]]](0)
-    val dimension = row.getAs[Map[String, Double]](2)
+
+    val cat = row.getAs[Map[String, Map[String, String]]](0)
+    val dog = row.getAs[Map[String, String]](2)
+
+    val compare: Map[String, Map[String, Double]] = cat.map(f => {
+      val key = f._1
+      val value = f._2
+      val p = Pattern.compile("\\\\d+\\\\.\\\\d+$|-\\\\d+\\\\.\\\\d+$")
+      val p2 = Pattern.compile("\\\\d+\\\\.\\\\d+,\\\\d+\\\\.\\\\d+$")
+      key -> value.map(en => {
+        if (p.matcher(en._2).matches()) {
+          en._1 -> en._2.toDouble
+        } else if (p2.matcher(en._2).matches()) {
+          en._1 -> en._2.split(",")(0).toDouble / en._2.split(",")(1).toDouble
+        } else {
+          en._1 -> en._2.split(",").length.toDouble
+        }
+      })
+    })
+
+
+    val dimension: Map[String, Double] = dog.map(en => {
+      val key = en._1
+      val value = en._2
+      val p = Pattern.compile("\\\\d+\\\\.\\\\d+$|-\\\\d+\\\\.\\\\d+$")
+      val p2 = Pattern.compile("\\\\d+\\\\.\\\\d+,\\\\d+\\\\.\\\\d+$")
+      if (p.matcher(value).matches()) {
+        key -> value.toDouble
+      } else if (p2.matcher(value).matches()) {
+        key -> value.split(",")(0).toDouble / value.split(",")(1).toDouble
+      } else {
+        key -> value.split(",").length.toDouble
+      }
+    })
 
 
     val dimension_length = row.getInt(4)
@@ -412,14 +614,14 @@ data = {
       })
 
       totalSumMap.foreach(i => {
-        result += (i._1 + "△" + i._2 -> 2.00)
+        result += (i._1 + "△" + i._2 -> 0.00)
       })
 
       sub_ttal.foreach(i => {
-        result += (i._1 + "△" + i._2 -> 1.00)
+        result += (i._1 + "△" + i._2 -> 0.00)
       })
 
-    } else if (rowcol.toInt == 6 || rowcol.toInt == 2 || rowcol.toInt == 4) {
+    } else if (rowcol.toInt == 6 || rowcol.toInt == 4 || rowcol.toInt == 2) {
       val mea = new Array[Double](measure_length).mkString("△")
 
       var total_key = "总计"
@@ -455,30 +657,31 @@ data = {
           sub_totalSumMap += (subtotal_tmp_key -> res)
         }
       })
-
-      if (rowcol.toInt == 4) {
+      if (rowcol.toInt == 4 && rowcol.toInt != 2) {
         totalSumMap.foreach(en => {
           val key = "%s△%s△columnSum".format(en._1, en._2)
-          result += (key -> 2.00)
+          result += (key -> 0.00)
         })
       }
-      if (rowcol.toInt == 2) {
-
+      if (rowcol.toInt != 4 && rowcol.toInt == 2) {
         sub_totalSumMap.foreach(en => {
           val key = "%s△%s△columnSum_subtotal_".format(en._1, en._2)
-          result += (key -> 1.00)
+          result += (key -> 0.00)
         })
       }
       if (rowcol.toInt == 6) {
         totalSumMap.foreach(en => {
           val key = "%s△%s△columnSum".format(en._1, en._2)
-          result += (key -> 2.00)
+          result += (key -> 0.00)
         })
         sub_totalSumMap.foreach(en => {
           val key = "%s△%s△columnSum_subtotal_".format(en._1, en._2)
-          result += (key -> 1.00)
+          result += (key -> 0.00)
         })
       }
+
+    } else {
+      throw new RuntimeException("rowcol [0,1,6,7]")
     }
     result
   }
@@ -513,4 +716,5 @@ def row_col_stat(sid, url):
 
 url = "http://172.20.44.6:8999/sessions/"
 # url ="http://bi-olap1.sm02:8999/sessions/"
-row_col_stat(78357, url)
+row_col_stat(78628, url)
+row_col_stat(78627, url)
