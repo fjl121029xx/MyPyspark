@@ -20,7 +20,7 @@ startJVM(jvmPath, "-ea", jvm_cp)
 # Path
 os.environ['SPARK_HOME'] = "H:\workspaces\spark"
 
-# Apperd pyspark to Python Path
+# Apperd spark to Python Path
 sys.path.append("H:\workspaces\spark\python")
 sys.path.append("H:\workspaces\spark\python\lib\py4j-0.10.7-src.zip")
 
@@ -40,8 +40,8 @@ keyConv = "org.apache.spark.examples.pythonconverters.ImmutableBytesWritableToSt
 valueConv = "org.apache.spark.examples.pythonconverters.HBaseResultToStringConverter"
 
 try:
-    from pyspark.sql import SparkSession
-    from pyspark.sql import Row
+    from spark.sql import SparkSession
+    from spark.sql import Row
 
     my_spark = SparkSession \
         .builder \

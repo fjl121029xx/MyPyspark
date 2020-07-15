@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding:utf-8 -*-
 __author__ = 'wsc'
-from pyspark.sql import Row
+from spark.sql import Row
 
 
 # Question = Row('pid', 'qid')

@@ -19,19 +19,19 @@ startJVM(jvmPath, "-ea", jvm_cp)
 # Path
 os.environ['SPARK_HOME'] = "H:\workspaces\spark"
 
-# Apperd pyspark to Python Path
+# Apperd spark to Python Path
 sys.path.append("H:\workspaces\spark\python")
 sys.path.append("H:\workspaces\spark\python\lib\py4j-0.10.7-src.zip")
 SPARK_HOME = os.environ['SPARK_HOME']
 sys.path.insert(0, os.path.join(SPARK_HOME, "python"))
 sys.path.insert(0, os.path.join(SPARK_HOME, "python", "lib"))
-sys.path.insert(0, os.path.join(SPARK_HOME, "python", "lib", "pyspark.zip"))
+sys.path.insert(0, os.path.join(SPARK_HOME, "python", "lib", "spark.zip"))
 sys.path.insert(0, os.path.join(SPARK_HOME, "python", "lib", "py4j-0.10.7-src.zip"))
 
 try:
 
-    from pyspark.sql import SparkSession
-    from pyspark.sql import Row
+    from spark.sql import SparkSession
+    from spark.sql import Row
 
     if __name__ == '__main__':
         my_spark = SparkSession \

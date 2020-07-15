@@ -8,13 +8,13 @@ import sys
 # Path
 os.environ['SPARK_HOME'] = "H:\workspaces\spark"
 
-# Apperd pyspark to Python Path
+# Apperd spark to Python Path
 sys.path.append("H:\workspaces\spark\python")
 sys.path.append("H:\workspaces\spark\python\lib\py4j-0.10.7-src.zip")
 
 try:
-    from pyspark import SparkContext
-    from pyspark import SparkConf
+    from spark import SparkContext
+    from spark import SparkConf
 
     print("Successfully imported Spark Modules")
 except ImportError as e:
